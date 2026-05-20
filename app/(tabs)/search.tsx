@@ -18,7 +18,7 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const router = useRouter();
 
-  const userLocation: [number, number] = [10.6667, 122.9500];
+  const userLocation: [number, number] = [14.5995, 120.9842];
   const fuelTypes = ['Diesel', 'Unleaded', 'Premium'] as const;
   const sortOptions = ['Price', 'Distance'] as const;
 

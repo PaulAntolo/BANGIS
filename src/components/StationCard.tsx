@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Bookmark, MapPin } from 'lucide-react-native';
 import { formatCurrency } from '../utils/formatters';
 import { getDistanceLabel } from '../utils/geo';
@@ -11,13 +11,16 @@ interface StationCardProps {
   userLocation?: [number, number];
 }
 
-export default function StationCard({ station, fuelType, userLocation = [10.6667, 122.9500] }: StationCardProps) {
+export default function StationCard({ station, fuelType, userLocation = [14.5995, 120.9842] }: StationCardProps) {
   const price = station.prices[fuelType.toLowerCase()] || station.prices.unleaded;
 
   return (
     <View style={styles.card}>
       <View style={styles.leftSection}>
         <View style={styles.brandRow}>
+          {station.logo ? (
+            <Image source={station.logo} style={styles.brandLogo} resizeMode="contain" />
+          ) : null}
           <Text style={styles.brandName}>{station.brand}</Text>
         </View>
         <View style={styles.metaRow}>
@@ -73,6 +76,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 6,
+  },
+  brandLogo: {
+    width: 32,
+    height: 32,
   },
   brandName: {
     fontWeight: 'bold',

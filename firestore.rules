@@ -77,7 +77,14 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // --- Scraped Station Rules (GasWatch PH pipeline) ---
+    match /scraped_stations/{stationId} {
+      allow read: if true;
+    }
 
+    match /scrape_meta/{docId} {
+      allow read: if true;
+    }
 
     // --- Activity Rules ---
     match /activities/{activityId} {

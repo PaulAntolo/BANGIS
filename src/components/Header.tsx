@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Platform } from 'react-native';
 import { ChevronLeft, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
-import { theme } from '../constants/theme';
-import Svg, { Path } from 'react-native-svg';
+import { useAppTheme } from '../context/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface HeaderProps {
@@ -19,6 +18,8 @@ export default function Header({ title, showBack, transparent }: HeaderProps) {
   const { user, profile } = useAuth();
   const { hasUnread } = useNotifications();
   const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   return (
     <View style={[
@@ -29,14 +30,12 @@ export default function Header({ title, showBack, transparent }: HeaderProps) {
       <View style={styles.leftSection}>
         {showBack ? (
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ChevronLeft size={24} color={theme.colors.textPrimary} />
+            <ChevronLeft size={24} color={colors.textPrimary} />
           </TouchableOpacity>
         ) : (
           <View style={styles.logoContainer}>
             <View style={styles.logoIconContainer}>
-              <Svg width={20} height={20} fill="currentColor" viewBox="0 0 24 24" color="#ffffff">
-                <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/>
-              </Svg>
+              <Image source={require('../../assets/BANGIS-logo.png')} style={{ width: 24, height: 24, resizeMode: 'contain' }} />
             </View>
             <View style={styles.logoTextContainer}>
               <Text style={styles.logoTextMain}>BANGIS</Text>
@@ -52,14 +51,14 @@ export default function Header({ title, showBack, transparent }: HeaderProps) {
           onPress={() => router.push('/alerts')}
           style={styles.iconButton}
         >
-          <Bell size={22} color={theme.colors.textSecondary} />
+          <Bell size={22} color={colors.textSecondary} />
           {hasUnread && (
             <View style={styles.notificationDot} />
           )}
         </TouchableOpacity>
         
         <TouchableOpacity 
-          onPress={() => router.push('/profile')} 
+          onPress={() => router.push('/(tabs)/profile')} 
           style={styles.profileButton}
         >
           <Image 
@@ -72,7 +71,7 @@ export default function Header({ title, showBack, transparent }: HeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingBottom: 16,
@@ -86,9 +85,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   solid: {
-    backgroundColor: theme.colors.bgWhite,
+    backgroundColor: colors.bgWhite,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderLight,
+    borderBottomColor: colors.borderLight,
   },
   leftSection: {
     flexDirection: 'row',
@@ -107,13 +106,13 @@ const styles = StyleSheet.create({
   logoIconContainer: {
     width: 32,
     height: 32,
-    backgroundColor: theme.colors.accent,
+    backgroundColor: colors.accent,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: theme.colors.accent,
+        shadowColor: colors.accent,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
@@ -130,13 +129,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
     letterSpacing: -0.5,
-    color: theme.colors.primary,
+    color: colors.primary,
     lineHeight: 18,
   },
   logoTextSub: {
     fontSize: 8,
     fontWeight: 'bold',
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     letterSpacing: 2,
     textTransform: 'uppercase',
     marginTop: 2,
@@ -144,7 +143,7 @@ const styles = StyleSheet.create({
   titleText: {
     fontWeight: 'bold',
     fontSize: 18,
-    color: theme.colors.textPrimary,
+    color: colors.textPrimary,
   },
   rightSection: {
     flexDirection: 'row',
@@ -161,19 +160,19 @@ const styles = StyleSheet.create({
     right: 0,
     width: 8,
     height: 8,
-    backgroundColor: theme.colors.danger,
+    backgroundColor: colors.danger,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: theme.colors.bgWhite,
+    borderColor: colors.bgWhite,
   },
   profileButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: theme.colors.borderLight,
+    backgroundColor: colors.borderLight,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: theme.colors.bgWhite,
+    borderColor: colors.bgWhite,
   },
   profileImage: {
     width: '100%',

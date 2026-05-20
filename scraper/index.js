@@ -2,102 +2,190 @@ const { chromium } = require('playwright');
 const admin = require('firebase-admin');
 require('dotenv').config();
 
-// Initialize Firebase Admin (Using Service Account for GitHub Actions, or default credentials locally)
+const GASWATCH_URL = 'https://gaswatchph.com/';
+const COLLECTION = 'scraped_stations';
+const BATCH_SIZE = 450;
+
 if (!admin.apps.length) {
   try {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
       const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     } else {
-      admin.initializeApp(); // Fallback to local default application credentials
+      admin.initializeApp();
     }
-    console.log("Firebase initialized successfully.");
+    console.log('Firebase initialized successfully.');
   } catch (error) {
-    console.error("Firebase initialization failed:", error.message);
+    console.error('Firebase initialization failed:', error.message);
+    process.exit(1);
   }
 }
 
 const db = admin.firestore();
 
-async function scrapeMetroFuel() {
-  console.log('Starting Playwright scraper...');
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext();
+function mapStation(raw) {
+  const prices = raw.prices || {};
+  const diesel = prices.diesel ?? null;
+  const unleaded = prices.unleaded ?? null;
+  const premium = prices.premium95 ?? prices.premium97 ?? null;
+
+  if (!raw.lat || !raw.lng) return null;
+  if (diesel == null && unleaded == null && premium == null) return null;
+
+  return {
+    id: `gw_${raw.id}`,
+    gaswatchId: raw.id,
+    name: raw.name,
+    brand: raw.brand,
+    address: `${raw.name}, ${raw.area}`,
+    area: raw.area,
+    prices: {
+      diesel,
+      unleaded,
+      premium,
+      premiumDiesel: prices.premiumDiesel ?? null,
+      egasoline: prices.egasoline ?? null,
+      premium97: prices.premium97 ?? null,
+      kerosene: prices.kerosene ?? null,
+    },
+    coords: { lat: raw.lat, lng: raw.lng },
+    source: 'GasWatchPH',
+    sourceUrl: GASWATCH_URL,
+    scrapedAt: new Date().toISOString(),
+    isBestValue: false,
+  };
+}
+
+async function scrapeGasWatchPh(browser) {
+  console.log('Starting GasWatch PH scraper...');
+  const context = await browser.newContext({
+    userAgent:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  });
   const page = await context.newPage();
 
-  let extractedData = null;
-
-  // Listen for the RSC payloads that contain the fuel data
-  page.on('response', async (response) => {
-    const url = response.url();
-    if (url.includes('metrofueltracker.com/prices') || url.includes('metrofueltracker.com/cities')) {
-      try {
-        const text = await response.text();
-        console.log(`Intercepted response from ${url}`);
-        
-        // This is where you would parse the specific RSC/JSON structure.
-        // For demonstration, if we detect data, we'll mark it as found.
-        if (text.includes('latitude') || text.includes('diesel') || text.includes('station')) {
-          console.log('Found fuel data in payload!');
-          // In a real scenario, you parse `text` here into an array of objects.
-          
-          // Fallback to simulated parsed data since RSC parsing logic requires exact structure knowledge
-          extractedData = [
-            { id: 'mf_1', name: 'Petron', address: 'Bacolod Downtown', prices: { diesel: 58.4, unleaded: 62.1, premium: 64.5 }, coords: { lat: 10.6765, lng: 122.9509 }, brand: 'Petron', isBestValue: false },
-            { id: 'mf_2', name: 'Shell', address: 'Lacson St', prices: { diesel: 59.2, unleaded: 63.0, premium: 65.2 }, coords: { lat: 10.6850, lng: 122.9550 }, brand: 'Shell', isBestValue: false },
-            { id: 'mf_3', name: 'Caltex', address: 'Mandalagan', prices: { diesel: 57.9, unleaded: 61.8, premium: 63.9 }, coords: { lat: 10.7000, lng: 122.9600 }, brand: 'Caltex', isBestValue: true },
-            { id: 'mf_4', name: 'Phoenix', address: 'Araneta St', prices: { diesel: 58.0, unleaded: 61.5, premium: 64.0 }, coords: { lat: 10.6650, lng: 122.9450 }, brand: 'Phoenix', isBestValue: false },
-          ];
-        }
-      } catch (e) {
-        console.error('Error reading response text:', e.message);
-      }
-    }
-  });
-
   try {
-    await page.goto('https://metrofueltracker.com/', { waitUntil: 'networkidle' });
-    console.log('Page loaded successfully.');
-    
-    // Wait a few seconds to ensure all asynchronous requests finish
-    await page.waitForTimeout(5000);
+    await page.goto(GASWATCH_URL, { waitUntil: 'networkidle', timeout: 120000 });
+    await page.waitForFunction(
+      () => window._tableAllStations && window._tableAllStations.length > 500,
+      { timeout: 90000 }
+    );
 
-    // If we didn't intercept the data from the network, fallback to DOM extraction
-    if (!extractedData) {
-      console.log('No network payload detected, falling back to simulated DOM extraction...');
-      // page.evaluate(() => { ... }) would go here
-      
-      extractedData = [
-        { id: 'mf_1', name: 'Petron', address: 'Bacolod Downtown', prices: { diesel: 58.4, unleaded: 62.1, premium: 64.5 }, coords: { lat: 10.6765, lng: 122.9509 }, brand: 'Petron', isBestValue: false },
-        { id: 'mf_2', name: 'Shell', address: 'Lacson St', prices: { diesel: 59.2, unleaded: 63.0, premium: 65.2 }, coords: { lat: 10.6850, lng: 122.9550 }, brand: 'Shell', isBestValue: false },
-        { id: 'mf_3', name: 'Caltex', address: 'Mandalagan', prices: { diesel: 57.9, unleaded: 61.8, premium: 63.9 }, coords: { lat: 10.7000, lng: 122.9600 }, brand: 'Caltex', isBestValue: true },
-      ];
-    }
+    const payload = await page.evaluate(() => {
+      const brands = window.BRANDS || {};
+      const lastUpdated =
+        typeof LAST_UPDATED !== 'undefined' ? LAST_UPDATED : window.LAST_UPDATED || null;
+      const stations = window._tableAllStations || [];
 
-    // Upload to Firestore
-    if (extractedData && extractedData.length > 0) {
-      console.log(`Uploading ${extractedData.length} stations to Firestore...`);
-      const batch = db.batch();
-      
-      for (const station of extractedData) {
-        const docRef = db.collection('scraped_stations').doc(station.id);
-        batch.set(docRef, station, { merge: true });
-      }
-      
-      await batch.commit();
-      console.log('Successfully updated Firestore with scraped data!');
-    } else {
-      console.log('No data found to upload.');
-    }
+      return {
+        lastUpdated,
+        stationCount: stations.length,
+        stations: stations.map((s) => {
+          const brandInfo = brands[s.brand];
+          const brandName =
+            brandInfo?.name || (s.brand ? s.brand.charAt(0).toUpperCase() + s.brand.slice(1) : 'Unknown');
 
+          return {
+            id: s.id,
+            name: s.name,
+            brand: brandName,
+            area: s.area,
+            lat: s.lat,
+            lng: s.lng,
+            prices: s.prices || {},
+          };
+        }),
+      };
+    });
+
+    console.log(
+      `GasWatch PH: ${payload.stationCount} stations loaded (site last updated: ${payload.lastUpdated || 'unknown'})`
+    );
+
+    const mapped = payload.stations.map(mapStation).filter(Boolean);
+    console.log(`Mapped ${mapped.length} stations with valid coords and prices.`);
+    return { stations: mapped, lastUpdated: payload.lastUpdated };
   } catch (error) {
-    console.error('Scraping failed:', error);
+    console.error('GasWatch PH scraping failed:', error);
+    return { stations: [], lastUpdated: null };
   } finally {
-    await browser.close();
-    process.exit(0);
+    await page.close();
+    await context.close();
   }
 }
 
-scrapeMetroFuel();
+async function removeLegacyStations() {
+  const snap = await db.collection(COLLECTION).get();
+  const legacy = snap.docs.filter((d) => !d.id.startsWith('gw_'));
+  if (!legacy.length) return;
+
+  console.log(`Removing ${legacy.length} legacy station docs...`);
+  for (let i = 0; i < legacy.length; i += BATCH_SIZE) {
+    const batch = db.batch();
+    legacy.slice(i, i + BATCH_SIZE).forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+  }
+}
+
+async function uploadToFirestore(stations, meta) {
+  if (!stations.length) {
+    console.log('No stations to upload.');
+    return;
+  }
+
+  await removeLegacyStations();
+
+  console.log(`Uploading ${stations.length} stations to Firestore (${COLLECTION})...`);
+
+  for (let i = 0; i < stations.length; i += BATCH_SIZE) {
+    const chunk = stations.slice(i, i + BATCH_SIZE);
+    const batch = db.batch();
+
+    for (const station of chunk) {
+      batch.set(db.collection(COLLECTION).doc(station.id), station, { merge: true });
+    }
+
+    await batch.commit();
+    console.log(`  Committed batch ${Math.floor(i / BATCH_SIZE) + 1} (${chunk.length} docs)`);
+  }
+
+  await db.collection('scrape_meta').doc('gaswatchph').set(
+    {
+      source: 'GasWatchPH',
+      sourceUrl: GASWATCH_URL,
+      lastUpdated: meta.lastUpdated,
+      stationCount: stations.length,
+      scrapedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  console.log('Successfully updated Firestore with GasWatch PH data.');
+}
+
+async function runScraper() {
+  const dryRun = process.argv.includes('--dry-run');
+  console.log(dryRun ? 'DRY RUN — will not write to Firestore' : 'Live run — writing to Firestore');
+
+  const browser = await chromium.launch({ headless: true });
+
+  try {
+    const { stations, lastUpdated } = await scrapeGasWatchPh(browser);
+
+    if (dryRun) {
+      console.log('Sample station:', JSON.stringify(stations[0], null, 2));
+      console.log(`Total: ${stations.length}`);
+      return;
+    }
+
+    await uploadToFirestore(stations, { lastUpdated });
+  } catch (error) {
+    console.error('Scraper failed:', error);
+    process.exitCode = 1;
+  } finally {
+    await browser.close();
+    process.exit(process.exitCode || 0);
+  }
+}
+
+runScraper();

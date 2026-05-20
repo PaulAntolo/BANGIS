@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { db } from './firebase';
+import { db } from '../lib/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
+import { withStationLogo } from '../utils/brandLogos';
 
 interface FuelContextType {
   stations: any[];
@@ -23,17 +24,14 @@ export function FuelProvider({ children }: { children: React.ReactNode }) {
       
       // If the database is empty (scraper hasn't run yet), fallback to some mock data just for UI preview
       if (data.length === 0) {
-        setStations([
-          { id: 'mf_1', name: 'Petron (Mock)', brand: 'Petron', address: 'Bacolod Downtown', prices: { diesel: 58.4, unleaded: 62.1, premium: 64.5 }, coords: { lat: 10.6765, lng: 122.9509 }, image: 'https://api.dicebear.com/7.x/initials/png?seed=Petron', isBestValue: false },
-          { id: 'mf_2', name: 'Shell (Mock)', brand: 'Shell', address: 'Lacson St', prices: { diesel: 59.2, unleaded: 63.0, premium: 65.2 }, coords: { lat: 10.6850, lng: 122.9550 }, image: 'https://api.dicebear.com/7.x/initials/png?seed=Shell', isBestValue: false },
-        ]);
+        setStations(
+          [
+            { id: 'gw_preview_1', name: 'Petron (Preview)', brand: 'Petron', address: 'Makati, Metro Manila', prices: { diesel: 82.72, unleaded: 85.66, premium: 88.26 }, coords: { lat: 14.554, lng: 121.024 }, isBestValue: false, source: 'GasWatchPH' },
+            { id: 'gw_preview_2', name: 'Shell (Preview)', brand: 'Shell', address: 'Makati, Metro Manila', prices: { diesel: 86.61, unleaded: 92.29, premium: 97.13 }, coords: { lat: 14.5501, lng: 121.03 }, isBestValue: false, source: 'GasWatchPH' },
+          ].map(withStationLogo)
+        );
       } else {
-        // Ensure image fields exist
-        const formatted = data.map(s => ({
-          ...s,
-          image: s.image || `https://api.dicebear.com/7.x/initials/png?seed=${s.brand || s.name}`
-        }));
-        setStations(formatted);
+        setStations(data.map(withStationLogo));
       }
     }, (error) => {
       console.error("Error fetching scraped stations:", error);

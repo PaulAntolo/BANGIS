@@ -1,15 +1,21 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, Dimensions } from 'react-native';
 import { TrendingUp, Zap, ChevronUp, ChevronDown, Info, X } from 'lucide-react-native';
+import { LineChart } from 'react-native-chart-kit';
 import Header from '../../src/components/Header';
 import { TREND_DATA, TREND_DATA_30D, REGIONAL_PRICES, ACTIVITY, EXTENDED_ACTIVITY } from '../../src/utils/mockData';
-import { theme } from '../../src/constants/theme';
+import { useAppTheme } from '../../src/context/ThemeContext';
 import Button from '../../src/components/Button';
+
+const screenWidth = Dimensions.get("window").width;
 
 export default function AnalyticsScreen() {
   const [activeFuel, setActiveFuel] = useState<'unleaded' | 'diesel' | 'premium'>('unleaded');
   const [timeframe, setTimeframe] = useState('7D');
   const [showHistory, setShowHistory] = useState(false);
+  
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const chartData = useMemo(() => {
     return timeframe === '1M' ? TREND_DATA_30D : TREND_DATA;
@@ -29,6 +35,38 @@ export default function AnalyticsScreen() {
       isUp: change > 0
     };
   }, [activeFuel, chartData]);
+
+  const chartConfig = {
+    backgroundGradientFrom: colors.bgLight,
+    backgroundGradientTo: colors.bgLight,
+    color: (opacity = 1) => colors.primary,
+    labelColor: (opacity = 1) => colors.textMuted,
+    strokeWidth: 2,
+    barPercentage: 0.5,
+    useShadowColorFromDataset: false,
+    propsForDots: {
+      r: "4",
+      strokeWidth: "2",
+      stroke: colors.primary
+    },
+    fillShadowGradientFrom: colors.primary,
+    fillShadowGradientFromOpacity: 0.2,
+    fillShadowGradientTo: colors.bgLight,
+    fillShadowGradientToOpacity: 0,
+  };
+
+  const lineChartData = {
+    labels: timeframe === '7D' 
+      ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].slice(0, chartData.length)
+      : Array.from({length: chartData.length}, (_, i) => i % 5 === 0 ? `${i+1}` : ''),
+    datasets: [
+      {
+        data: chartData.map(d => d[activeFuel]),
+        color: (opacity = 1) => colors.primary,
+        strokeWidth: 3
+      }
+    ]
+  };
 
   return (
     <View style={styles.container}>
@@ -58,7 +96,7 @@ export default function AnalyticsScreen() {
               <Text style={styles.avgValue}>₱{marketStats.avg}</Text>
             </View>
             <View style={[styles.changeBadge, marketStats.isUp ? styles.changeUp : styles.changeDown]}>
-              {marketStats.isUp ? <ChevronUp size={14} color={theme.colors.danger} /> : <ChevronDown size={14} color={theme.colors.success} />}
+              {marketStats.isUp ? <ChevronUp size={14} color={colors.danger} /> : <ChevronDown size={14} color={colors.success} />}
               <Text style={[styles.changeText, marketStats.isUp ? styles.changeTextUp : styles.changeTextDown]}>
                 {Math.abs(Number(marketStats.change))}%
               </Text>
@@ -99,9 +137,22 @@ export default function AnalyticsScreen() {
             </View>
           </View>
 
-          <View style={styles.chartMock}>
-            <Text style={styles.chartMockText}>[ Chart Placeholder ]</Text>
-            <Text style={styles.chartMockDesc}>Expo Recharts not installed. Mocking graph view.</Text>
+          <View style={styles.chartContainer}>
+            <LineChart
+              data={lineChartData}
+              width={screenWidth - 88}
+              height={180}
+              chartConfig={chartConfig}
+              bezier
+              style={{
+                borderRadius: 16,
+                paddingRight: 32,
+              }}
+              withVerticalLines={false}
+              withHorizontalLines={true}
+              yAxisLabel="₱"
+              yAxisInterval={1}
+            />
           </View>
         </View>
 
@@ -112,7 +163,7 @@ export default function AnalyticsScreen() {
               <Text style={styles.sectionSubtitle}>Price variation by city area</Text>
             </View>
             <View style={styles.infoIconBox}>
-              <Info size={14} color={theme.colors.primary} />
+              <Info size={14} color={colors.primary} />
             </View>
           </View>
           
@@ -124,14 +175,14 @@ export default function AnalyticsScreen() {
 
               return REGIONAL_PRICES.map((item) => {
                 const currentPrice = item[activeFuel];
-                let statusColor = theme.colors.primary;
+                let statusColor = colors.primary;
                 let label = "";
 
                 if (currentPrice === min) {
-                  statusColor = theme.colors.success;
+                  statusColor = colors.success;
                   label = "Lowest";
                 } else if (currentPrice === max) {
-                  statusColor = theme.colors.danger;
+                  statusColor = colors.danger;
                   label = "Highest";
                 }
 
@@ -168,7 +219,7 @@ export default function AnalyticsScreen() {
               <View key={act.id} style={styles.activityItem}>
                 <View style={styles.activityLeft}>
                   <View style={[styles.activityIconBox, act.type === 'price_hike' ? styles.activityIconHike : styles.activityIconDrop]}>
-                    {act.type === 'price_hike' ? <TrendingUp size={20} color={theme.colors.danger} /> : <Zap size={20} color={theme.colors.success} />}
+                    {act.type === 'price_hike' ? <TrendingUp size={20} color={colors.danger} /> : <Zap size={20} color={colors.success} />}
                   </View>
                   <View>
                     <Text style={styles.activityStation}>{act.station}</Text>
@@ -180,7 +231,7 @@ export default function AnalyticsScreen() {
                   </View>
                 </View>
                 <View style={styles.activityRight}>
-                  <Text style={[styles.activityChange, act.type === 'price_hike' ? { color: theme.colors.danger } : { color: theme.colors.success }]}>
+                  <Text style={[styles.activityChange, act.type === 'price_hike' ? { color: colors.danger } : { color: colors.success }]}>
                     {act.change}
                   </Text>
                   <Text style={styles.activityCurrency}>PHP</Text>
@@ -205,7 +256,7 @@ export default function AnalyticsScreen() {
                 <Text style={styles.modalSubtitle}>Live Bacolod Intelligence</Text>
               </View>
               <TouchableOpacity style={styles.closeBtn} onPress={() => setShowHistory(false)}>
-                <X size={20} color={theme.colors.primary} />
+                <X size={20} color={colors.primary} />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
@@ -213,7 +264,7 @@ export default function AnalyticsScreen() {
                 <View key={act.id} style={styles.activityItem}>
                   <View style={styles.activityLeft}>
                     <View style={[styles.activityIconBox, act.type === 'price_hike' ? styles.activityIconHike : styles.activityIconDrop]}>
-                      {act.type === 'price_hike' ? <TrendingUp size={20} color={theme.colors.danger} /> : <Zap size={20} color={theme.colors.success} />}
+                      {act.type === 'price_hike' ? <TrendingUp size={20} color={colors.danger} /> : <Zap size={20} color={colors.success} />}
                     </View>
                     <View>
                       <Text style={styles.activityStation}>{act.station}</Text>
@@ -225,7 +276,7 @@ export default function AnalyticsScreen() {
                     </View>
                   </View>
                   <View style={styles.activityRight}>
-                    <Text style={[styles.activityChange, act.type === 'price_hike' ? { color: theme.colors.danger } : { color: theme.colors.success }]}>
+                    <Text style={[styles.activityChange, act.type === 'price_hike' ? { color: colors.danger } : { color: colors.success }]}>
                       {act.change}
                     </Text>
                     <Text style={styles.activityCurrency}>PHP</Text>
@@ -246,15 +297,15 @@ export default function AnalyticsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.bgLight },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bgLight },
   content: { padding: 20, paddingBottom: 40 },
   marketIdentity: { marginBottom: 24 },
   marketTitleContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  pulseDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.accent },
-  marketTitle: { fontSize: 24, fontWeight: '900', color: theme.colors.primary },
-  marketSubtitle: { fontSize: 10, fontWeight: '900', color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: 2, marginTop: 4, marginLeft: 16 },
-  intelligenceCard: { backgroundColor: theme.colors.primary, padding: 24, borderRadius: 32, marginBottom: 24 },
+  pulseDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent },
+  marketTitle: { fontSize: 24, fontWeight: '900', color: colors.primary },
+  marketSubtitle: { fontSize: 10, fontWeight: '900', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 2, marginTop: 4, marginLeft: 16 },
+  intelligenceCard: { backgroundColor: colors.primary, padding: 24, borderRadius: 32, marginBottom: 24 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   cardBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   cardBadgeText: { fontSize: 9, fontWeight: '900', color: 'white', textTransform: 'uppercase', letterSpacing: 1 },
@@ -266,60 +317,58 @@ const styles = StyleSheet.create({
   changeUp: { backgroundColor: 'rgba(239, 68, 68, 0.2)' },
   changeDown: { backgroundColor: 'rgba(34, 197, 94, 0.2)' },
   changeText: { fontSize: 12, fontWeight: '900' },
-  changeTextUp: { color: theme.colors.danger },
-  changeTextDown: { color: theme.colors.success },
-  fuelSelector: { flexDirection: 'row', backgroundColor: theme.colors.bgWhite, padding: 4, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: theme.colors.borderLight },
+  changeTextUp: { color: colors.danger },
+  changeTextDown: { color: colors.success },
+  fuelSelector: { flexDirection: 'row', backgroundColor: colors.bgWhite, padding: 4, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: colors.borderLight },
   fuelBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
-  fuelBtnActive: { backgroundColor: theme.colors.primary },
-  fuelBtnText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, color: theme.colors.textMuted },
+  fuelBtnActive: { backgroundColor: colors.primary },
+  fuelBtnText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, color: colors.textMuted },
   fuelBtnTextActive: { color: 'white' },
-  sectionCard: { backgroundColor: theme.colors.bgWhite, padding: 24, borderRadius: 32, borderWidth: 1, borderColor: theme.colors.borderLight, marginBottom: 24 },
+  sectionCard: { backgroundColor: colors.bgWhite, padding: 24, borderRadius: 32, borderWidth: 1, borderColor: colors.borderLight, marginBottom: 24 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  sectionTitle: { fontSize: 14, fontWeight: '900', color: theme.colors.primary, textTransform: 'uppercase' },
-  sectionSubtitle: { fontSize: 10, fontWeight: 'bold', color: theme.colors.textMuted, marginTop: 2 },
-  sectionTitleMain: { fontSize: 14, fontWeight: '900', color: theme.colors.primary, textTransform: 'uppercase', marginBottom: 24 },
+  sectionTitle: { fontSize: 14, fontWeight: '900', color: colors.primary, textTransform: 'uppercase' },
+  sectionSubtitle: { fontSize: 10, fontWeight: 'bold', color: colors.textMuted, marginTop: 2 },
+  sectionTitleMain: { fontSize: 14, fontWeight: '900', color: colors.primary, textTransform: 'uppercase', marginBottom: 24 },
   timeframeToggles: { flexDirection: 'row', gap: 4 },
-  timeToggle: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: theme.colors.bgLight, borderWidth: 1, borderColor: theme.colors.borderLight },
-  timeToggleActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  timeToggleText: { fontSize: 9, fontWeight: '900', color: theme.colors.textMuted },
+  timeToggle: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.bgLight, borderWidth: 1, borderColor: colors.borderLight },
+  timeToggleActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  timeToggleText: { fontSize: 9, fontWeight: '900', color: colors.textMuted },
   timeToggleTextActive: { color: 'white' },
-  chartMock: { height: 180, backgroundColor: theme.colors.bgLight, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.colors.borderLight, borderStyle: 'dashed' },
-  chartMockText: { fontSize: 12, fontWeight: 'bold', color: theme.colors.textMuted },
-  chartMockDesc: { fontSize: 10, color: theme.colors.textSecondary, marginTop: 4 },
-  infoIconBox: { width: 32, height: 32, borderRadius: 16, backgroundColor: theme.colors.primaryLight + '20', alignItems: 'center', justifyContent: 'center' },
+  chartContainer: { height: 180, marginLeft: -16, marginTop: 8 },
+  infoIconBox: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primaryLight + '20', alignItems: 'center', justifyContent: 'center' },
   districtList: { gap: 16 },
   districtItem: { gap: 8 },
   districtHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  districtArea: { fontSize: 10, fontWeight: '900', color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
+  districtArea: { fontSize: 10, fontWeight: '900', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
   districtPriceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
   districtPrice: { fontSize: 14, fontWeight: '900' },
   districtBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   districtBadgeText: { fontSize: 8, fontWeight: '900', textTransform: 'uppercase' },
-  marketIndexLabel: { fontSize: 9, fontWeight: 'bold', color: theme.colors.textMuted },
-  barBackground: { height: 6, backgroundColor: theme.colors.bgLight, borderRadius: 3, overflow: 'hidden' },
+  marketIndexLabel: { fontSize: 9, fontWeight: 'bold', color: colors.textMuted },
+  barBackground: { height: 6, backgroundColor: colors.bgLight, borderRadius: 3, overflow: 'hidden' },
   barForeground: { height: '100%', borderRadius: 3 },
   activityList: { gap: 20 },
   activityItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   activityLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   activityIconBox: { width: 48, height: 48, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  activityIconHike: { backgroundColor: theme.colors.danger + '10', borderColor: theme.colors.danger + '20' },
-  activityIconDrop: { backgroundColor: theme.colors.success + '10', borderColor: theme.colors.success + '20' },
-  activityStation: { fontSize: 14, fontWeight: '900', color: theme.colors.primary },
+  activityIconHike: { backgroundColor: colors.danger + '10', borderColor: colors.danger + '20' },
+  activityIconDrop: { backgroundColor: colors.success + '10', borderColor: colors.success + '20' },
+  activityStation: { fontSize: 14, fontWeight: '900', color: colors.primary },
   activityMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  activityReason: { fontSize: 10, fontWeight: 'bold', color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
-  activityDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: theme.colors.borderGray },
-  activityTime: { fontSize: 9, fontWeight: 'bold', color: theme.colors.textMuted },
+  activityReason: { fontSize: 10, fontWeight: 'bold', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
+  activityDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.borderGray },
+  activityTime: { fontSize: 9, fontWeight: 'bold', color: colors.textMuted },
   activityRight: { alignItems: 'flex-end' },
   activityChange: { fontSize: 18, fontWeight: '900' },
-  activityCurrency: { fontSize: 10, fontWeight: '900', color: theme.colors.textMuted, textTransform: 'uppercase' },
-  viewHistoryBtn: { width: '100%', marginTop: 24, paddingVertical: 16, backgroundColor: theme.colors.bgLight, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.borderLight },
-  viewHistoryText: { fontSize: 10, fontWeight: '900', color: theme.colors.primary, textTransform: 'uppercase', letterSpacing: 1 },
+  activityCurrency: { fontSize: 10, fontWeight: '900', color: colors.textMuted, textTransform: 'uppercase' },
+  viewHistoryBtn: { width: '100%', marginTop: 24, paddingVertical: 16, backgroundColor: colors.bgLight, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.borderLight },
+  viewHistoryText: { fontSize: 10, fontWeight: '900', color: colors.primary, textTransform: 'uppercase', letterSpacing: 1 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: theme.colors.bgWhite, borderTopLeftRadius: 40, borderTopRightRadius: 40, maxHeight: '85%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, borderBottomWidth: 1, borderBottomColor: theme.colors.borderLight },
-  modalTitle: { fontSize: 20, fontWeight: '900', color: theme.colors.primary, textTransform: 'uppercase' },
-  modalSubtitle: { fontSize: 10, fontWeight: 'bold', color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
-  closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.bgLight, alignItems: 'center', justifyContent: 'center' },
+  modalContent: { backgroundColor: colors.bgWhite, borderTopLeftRadius: 40, borderTopRightRadius: 40, maxHeight: '85%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: colors.primary, textTransform: 'uppercase' },
+  modalSubtitle: { fontSize: 10, fontWeight: 'bold', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
+  closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.bgLight, alignItems: 'center', justifyContent: 'center' },
   modalBody: { padding: 24, gap: 24 },
-  modalFooter: { padding: 24, borderTopWidth: 1, borderTopColor: theme.colors.borderLight, backgroundColor: theme.colors.bgLight },
+  modalFooter: { padding: 24, borderTopWidth: 1, borderTopColor: colors.borderLight, backgroundColor: colors.bgLight },
 });

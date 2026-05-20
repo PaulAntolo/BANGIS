@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import Button from '../../src/components/Button';
 import InputField from '../../src/components/InputField';
 import { theme } from '../../src/constants/theme';
+import { useAppTheme } from '../../src/context/ThemeContext';
 import Svg, { Path } from 'react-native-svg';
 
 export default function RegisterScreen() {
@@ -16,6 +17,8 @@ export default function RegisterScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const { signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const handleSignUp = async () => {
     setIsLoading(true);
@@ -46,6 +49,7 @@ export default function RegisterScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
           <View style={styles.header}>
+            <Image source={require('../../assets/BANGIS-logo.png')} style={{ width: 80, height: 80, resizeMode: 'contain', marginBottom: 16 }} />
             <Text style={styles.title}>Join Bangis</Text>
             <Text style={styles.subtitle}>Create an account to start tracking</Text>
           </View>
@@ -54,7 +58,7 @@ export default function RegisterScreen() {
             <InputField
               label="FULL NAME"
               placeholder="Juan Dela Cruz"
-              icon={<User size={18} color={theme.colors.textMuted} />}
+              icon={<User size={18} color={colors.textMuted} />}
               value={name}
               onChangeText={setName}
             />
@@ -62,7 +66,7 @@ export default function RegisterScreen() {
             <InputField
               label="EMAIL"
               placeholder="your@email.com"
-              icon={<Mail size={18} color={theme.colors.textMuted} />}
+              icon={<Mail size={18} color={colors.textMuted} />}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -74,7 +78,7 @@ export default function RegisterScreen() {
                 label="PASSWORD"
                 placeholder="••••••••"
                 secureTextEntry={!showPassword}
-                icon={<Lock size={18} color={theme.colors.textMuted} />}
+                icon={<Lock size={18} color={colors.textMuted} />}
                 value={password}
                 onChangeText={setPassword}
               />
@@ -82,7 +86,7 @@ export default function RegisterScreen() {
                 style={styles.eyeIcon} 
                 onPress={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <EyeOff size={18} color={theme.colors.textMuted} /> : <Eye size={18} color={theme.colors.textMuted} />}
+                {showPassword ? <EyeOff size={18} color={colors.textMuted} /> : <Eye size={18} color={colors.textMuted} />}
               </TouchableOpacity>
             </View>
 
@@ -106,14 +110,12 @@ export default function RegisterScreen() {
             </Svg>
             <Text style={styles.googleBtnText}>Google</Text>
           </TouchableOpacity>
-        </View>
 
-        <View style={styles.toggleBar}>
-          <TouchableOpacity style={styles.toggleInactive} onPress={() => router.push('/(auth)/login')}>
-            <Text style={styles.toggleInactiveText}>LOGIN</Text>
-          </TouchableOpacity>
-          <View style={styles.toggleActive}>
-            <Text style={styles.toggleActiveText}>SIGNUP ACTIVE</Text>
+          <View style={styles.signupContainer}>
+            <Text style={styles.signupText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+              <Text style={styles.signupLink}>Log in</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -121,10 +123,10 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#eff6ff',
+    backgroundColor: colors.bgLight,
   },
   scrollContent: {
     flexGrow: 1,
@@ -132,16 +134,16 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   card: {
-    backgroundColor: theme.colors.bgWhite,
+    backgroundColor: colors.bgWhite,
     padding: 32,
     borderRadius: 24,
-    shadowColor: theme.colors.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 20,
     elevation: 4,
     borderWidth: 1,
-    borderColor: theme.colors.bgWhite,
+    borderColor: colors.bgWhite,
   },
   header: {
     marginBottom: 32,
@@ -150,10 +152,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '900',
-    color: theme.colors.primary,
+    color: colors.primary,
   },
   subtitle: {
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '500',
     marginTop: 4,
@@ -177,13 +179,13 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: theme.colors.borderLight,
+    backgroundColor: colors.borderLight,
   },
   dividerText: {
     paddingHorizontal: 12,
     fontSize: 10,
     fontWeight: 'bold',
-    color: theme.colors.textMuted,
+    color: colors.textMuted,
     letterSpacing: 2,
   },
   googleBtn: {
@@ -193,50 +195,27 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
+    borderColor: colors.borderLight,
     borderRadius: theme.borderRadius.xl,
-    backgroundColor: theme.colors.bgWhite,
+    backgroundColor: colors.bgWhite,
   },
   googleBtnText: {
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: colors.primary,
     fontSize: 14,
   },
-  toggleBar: {
+  signupContainer: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.bgWhite,
-    padding: 6,
-    borderRadius: 30,
-    marginTop: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    justifyContent: 'center',
+    marginTop: 32,
   },
-  toggleActive: {
-    flex: 1,
-    backgroundColor: theme.colors.accent,
-    paddingVertical: 12,
-    borderRadius: 24,
-    alignItems: 'center',
+  signupText: {
+    fontSize: 14,
+    color: colors.textSecondary,
   },
-  toggleActiveText: {
-    color: theme.colors.bgWhite,
-    fontWeight: '900',
-    fontSize: 10,
-    letterSpacing: 1,
-  },
-  toggleInactive: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 24,
-    alignItems: 'center',
-  },
-  toggleInactiveText: {
-    color: theme.colors.textMuted,
-    fontWeight: '900',
-    fontSize: 10,
-    letterSpacing: 1,
+  signupLink: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.accent,
   },
 });

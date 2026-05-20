@@ -1,9 +1,9 @@
 export const lightColors = {
-  primary: '#ffb200',
-  primaryLight: '#ffc133',
-  primaryDark: '#e6a000',
+  primary: '#0066ff',
+  primaryLight: '#3385ff',
+  primaryDark: '#004cbf',
   secondary: '#1c1c1c',
-  accent: '#0066ff',
+  accent: '#ffb200', // Swapped accent to yellow to complement the blue
   success: '#00cc66',
   danger: '#ff3333',
   warning: '#ffcc00',
@@ -17,11 +17,11 @@ export const lightColors = {
 };
 
 export const darkColors = {
-  primary: '#ffb200',
-  primaryLight: '#ffc133',
-  primaryDark: '#e6a000',
+  primary: '#3b82f6',
+  primaryLight: '#60a5fa',
+  primaryDark: '#2563eb',
   secondary: '#f9fafb',
-  accent: '#3b82f6',
+  accent: '#ffb200',
   success: '#00cc66',
   danger: '#ff4444',
   warning: '#ffcc00',

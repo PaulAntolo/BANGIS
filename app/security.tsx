@@ -9,7 +9,8 @@ import { useAppTheme } from '../src/context/ThemeContext';
 
 export default function SecurityScreen() {
   const { user, profile, updateUser } = useAuth();
-  const { isDarkMode, toggleTheme } = useAppTheme();
+  const { isDarkMode, toggleTheme, colors } = useAppTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   const [name, setName] = useState(profile?.displayName || '');
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -82,7 +83,7 @@ export default function SecurityScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={[styles.inputIcon, { width: 32, alignItems: 'center' }]}>
-                  <Text style={{ fontSize: 16 }}>{isDarkMode ? '🌙' : '☀️'}</Text>
+                  <Shield size={16} color={theme.colors.accent} />
                 </View>
                 <View>
                   <Text style={[styles.inputLabel, { marginLeft: 0 }]}>DARK MODE</Text>
@@ -97,55 +98,49 @@ export default function SecurityScreen() {
             <Button
               onPress={handleSave}
               fullWidth
-              variant={isSaved ? 'accent' : 'primary'}
-              isLoading={isLoading}
+              disabled={isLoading}
+              style={{ marginTop: 8 }}
             >
-              <Save size={18} color="white" style={{ marginRight: 8 }} />
-              {isSaved ? 'Changes Saved!' : 'Save Modifications'}
+              {isLoading ? 'SAVING...' : 'SAVE CHANGES'}
             </Button>
           </View>
-        </View>
 
-        <View style={styles.securityInfo}>
-          <Shield size={24} color={theme.colors.accent} style={styles.securityIcon} />
-          <View style={styles.securityTextContainer}>
-            <Text style={styles.securityTitle}>SECURE ACCOUNT</Text>
-            <Text style={styles.securityDesc}>
-              Your data is encrypted and stored securely. We never share your personal information with third-party providers without your explicit consent.
-            </Text>
+          <View style={[styles.securityInfo, { marginTop: 24 }]}>
+            <Shield size={24} color={theme.colors.accent} style={styles.securityIcon} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.securityTitle}>Bank-Grade Security</Text>
+              <Text style={styles.securityDesc}>Your information is protected by industry-leading encryption and security protocols.</Text>
+            </View>
           </View>
         </View>
-
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.bgLight },
-  content: { padding: 20 },
-  accountCard: { backgroundColor: theme.colors.bgWhite, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: theme.colors.borderLight, marginBottom: 24 },
-  accountHeader: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24 },
-  avatarBorder: { width: 64, height: 64, borderRadius: 32, borderWidth: 4, borderColor: theme.colors.primary + '10', padding: 2 },
-  avatarImage: { width: '100%', height: '100%', borderRadius: 28, backgroundColor: theme.colors.bgLight },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bgLight },
+  accountCard: { backgroundColor: colors.bgWhite, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: colors.borderLight, marginBottom: 24 },
+  avatarSection: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  avatarBorder: { width: 64, height: 64, borderRadius: 32, borderWidth: 4, borderColor: colors.primary + '10', padding: 2 },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 28, backgroundColor: colors.bgLight },
   accountInfo: { flex: 1 },
-  displayName: { fontSize: 20, fontWeight: '900', color: theme.colors.primary },
-  emailText: { fontSize: 14, fontWeight: '500', color: theme.colors.textMuted },
-  memberSinceBox: { backgroundColor: theme.colors.bgLight, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.borderLight },
-  memberSinceLabel: { fontSize: 10, fontWeight: '900', color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: 2 },
-  memberSinceDate: { fontSize: 14, fontWeight: 'bold', color: theme.colors.primary, marginTop: 4 },
-  editSection: { marginBottom: 24 },
-  sectionTitle: { fontSize: 11, fontWeight: '900', color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16, marginLeft: 4 },
-  editCard: { backgroundColor: theme.colors.bgWhite, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: theme.colors.borderLight, gap: 16 },
-  inputGroup: { gap: 6 },
-  inputLabel: { fontSize: 11, fontWeight: '900', color: theme.colors.primary + '99', textTransform: 'uppercase', letterSpacing: 2, marginLeft: 4 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.colors.bgLight, borderRadius: 16, paddingHorizontal: 16, borderWidth: 1, borderColor: theme.colors.borderLight },
+  displayName: { fontSize: 20, fontWeight: '900', color: colors.primary },
+  emailText: { fontSize: 14, fontWeight: '500', color: colors.textMuted },
+  memberSinceBox: { backgroundColor: colors.bgLight, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: colors.borderLight },
+  memberSinceLabel: { fontSize: 10, fontWeight: '900', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 2 },
+  memberSinceDate: { fontSize: 14, fontWeight: 'bold', color: colors.primary, marginTop: 4 },
+  editSection: { gap: 8 },
+  sectionTitle: { fontSize: 11, fontWeight: '900', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16, marginLeft: 4 },
+  editCard: { backgroundColor: colors.bgWhite, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: colors.borderLight, gap: 16 },
+  inputGroup: { gap: 8 },
+  inputLabel: { fontSize: 11, fontWeight: '900', color: colors.primary + '99', textTransform: 'uppercase', letterSpacing: 2, marginLeft: 4 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bgLight, borderRadius: 16, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.borderLight },
   inputIcon: { marginRight: 12 },
-  input: { flex: 1, paddingVertical: 16, fontSize: 14, fontWeight: 'bold', color: theme.colors.primary },
-  divider: { height: 1, backgroundColor: theme.colors.borderLight, marginVertical: 8 },
-  securityInfo: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: theme.colors.accent + '10', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.accent + '20', gap: 12 },
+  input: { flex: 1, paddingVertical: 16, fontSize: 14, fontWeight: 'bold', color: colors.primary },
+  divider: { height: 1, backgroundColor: colors.borderLight, marginVertical: 8 },
+  securityInfo: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: colors.accent + '10', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: colors.accent + '20', gap: 12 },
   securityIcon: { marginTop: 2 },
-  securityTextContainer: { flex: 1 },
-  securityTitle: { fontSize: 12, fontWeight: '900', color: theme.colors.primary, textTransform: 'uppercase', letterSpacing: 1 },
-  securityDesc: { fontSize: 10, fontWeight: '500', color: theme.colors.textMuted, marginTop: 4, lineHeight: 16 },
+  securityTitle: { fontSize: 12, fontWeight: '900', color: colors.primary, textTransform: 'uppercase', letterSpacing: 1 },
+  securityDesc: { fontSize: 10, fontWeight: '500', color: colors.textMuted, marginTop: 4, lineHeight: 16 },
 });

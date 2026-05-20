@@ -1,22 +1,24 @@
 import { Tabs } from 'expo-router';
 import { Home, Search, BarChart2, User } from 'lucide-react-native';
-import { theme } from '../../src/constants/theme';
+import { useAppTheme } from '../../src/context/ThemeContext';
 import { View } from 'react-native';
 
 import { FuelProvider } from '../../src/context/FuelContext';
 
 export default function TabLayout() {
+  const { colors } = useAppTheme();
+
   return (
     <FuelProvider>
       <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.colors.accent,
-        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           borderTopWidth: 1,
-          borderTopColor: theme.colors.borderLight,
-          backgroundColor: theme.colors.bgWhite,
+          borderTopColor: colors.borderLight,
+          backgroundColor: colors.bgWhite,
           elevation: 10,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -4 },

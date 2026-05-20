@@ -1,10 +1,11 @@
 {
   "name": "bangis-scraper",
   "version": "1.0.0",
-  "description": "Weekly Playwright scraper for Bangis fuel data",
+  "description": "Playwright scraper for GasWatch PH → Bangis Firestore",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dry-run": "node index.js --dry-run"
   },
   "dependencies": {
     "playwright": "^1.42.0",

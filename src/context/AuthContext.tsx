@@ -5,7 +5,8 @@ import {
   createUserWithEmailAndPassword, 
   signOut,
   updateProfile,
-  User
+  User,
+  signInAnonymously
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -16,6 +17,7 @@ interface AuthContextType {
   profile: any;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<void>;
+  loginAsGuest: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   signUp: (data: any) => Promise<void>;
@@ -39,9 +41,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           const userProfile = {
             uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
+            email: firebaseUser.email || null,
+            displayName: firebaseUser.displayName || 'Guest',
+            photoURL: firebaseUser.photoURL || null,
             rank: 'Operative',
             contributionCount: 0,
             createdAt: serverTimestamp()
@@ -60,6 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
+  };
+
+  const loginAsGuest = async () => {
+    await signInAnonymously(auth);
   };
 
   const signInWithGoogle = async () => {
@@ -102,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, isLoading, login, logout, signUp, updateUser, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, profile, isLoading, login, loginAsGuest, logout, signUp, updateUser, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );

@@ -37,3 +37,10 @@ yarn-error.*
 *.tsbuildinfo
 
 expo-temp/
+
+# scraper temp
+scraper/data-sample.js
+scraper/probe.js
+scraper/probe2.js
+.env
+scraper/.env
