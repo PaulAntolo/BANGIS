@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- User Rules ---
+    function isValidCreateUser(data) {
+      return data.uid == request.auth.uid 
+        && data.email is string && data.email.size() <= 256
+        && (data.displayName == null || (data.displayName is string && data.displayName.size() <= 100))
+        && (data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 1500000))
+        && (data.rank == null || (data.rank is string && data.rank.size() <= 50))
+        && (data.contributionCount == null || data.contributionCount is int);
+    }
+
+    function isValidUpdateUser(data) {
+      return (data.displayName == null || (data.displayName is string && data.displayName.size() <= 100))
+        && (data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 1500000))
+        && (data.rank == null || (data.rank is string && data.rank.size() <= 50))
+        && (data.contributionCount == null || data.contributionCount is int);
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) 
+        && incoming().keys().hasAll(['uid', 'email', 'createdAt'])
+        && incoming().keys().size() >= 3
+        && isValidCreateUser(incoming()) 
+        && incoming().createdAt == request.time;
+      allow update: if isOwner(userId) 
+        && isValidUpdateUser(incoming()) 
+        && !incoming().diff(existing()).affectedKeys().hasAny(['uid', 'email', 'createdAt']);
+    }
+
+    // --- Station Rules ---
+    function isValidStation(data) {
+      return data.name is string && data.name.size() <= 100
+        && data.brand is string && data.brand.size() <= 50
+        && data.address is string && data.address.size() <= 256;
+    }
+
+    match /stations/{stationId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+
+
+    // --- Activity Rules ---
+    match /activities/{activityId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

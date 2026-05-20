@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "rank": { "type": "string" },
+        "contributionCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Station": {
+      "title": "Station",
+      "description": "Gas station details",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "brand": { "type": "string" },
+        "address": { "type": "string" },
+        "coords": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "prices": {
+          "type": "object",
+          "properties": {
+            "diesel": { "type": "number" },
+            "unleaded": { "type": "number" },
+            "premium": { "type": "number" }
+          }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "verificationCount": { "type": "number" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "logoUrl": { "type": "string" }
+      },
+      "required": ["name", "brand", "address"]
+    },
+    "PriceReport": {
+      "title": "Price Report",
+      "description": "A report of a fuel price at a station",
+      "type": "object",
+      "properties": {
+        "stationId": { "type": "string" },
+        "userId": { "type": "string" },
+        "fuelType": { "type": "string", "enum": ["diesel", "unleaded", "premium"] },
+        "price": { "type": "number" },
+        "reportType": { "type": "string", "enum": ["low", "normal", "high"] },
+        "details": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["stationId", "userId", "fuelType", "price"]
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "Activity feed item",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["price_hike", "discount"] },
+        "stationName": { "type": "string" },
+        "stationId": { "type": "string" },
+        "change": { "type": "string" },
+        "reason": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "stationName", "change", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/stations/{stationId}": {
+      "schema": "Station",
+      "description": "Gas stations list"
+    },
+    "/priceReports/{reportId}": {
+      "schema": "PriceReport",
+      "description": "Crowdsourced price reports"
+    },
+    "/activities/{activityId}": {
+      "schema": "Activity",
+      "description": "Global activity feed"
+    }
+  }
+}

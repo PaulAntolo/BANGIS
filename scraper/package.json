@@ -1,0 +1,14 @@
+{
+  "name": "bangis-scraper",
+  "version": "1.0.0",
+  "description": "Weekly Playwright scraper for Bangis fuel data",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "playwright": "^1.42.0",
+    "firebase-admin": "^12.0.0",
+    "dotenv": "^16.4.5"
+  }
+}

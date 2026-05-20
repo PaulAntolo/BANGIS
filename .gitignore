@@ -1,0 +1,59 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+expo-temp/
+    ```
+    *(If you don't want to open an editor, you can just run `echo "expo-temp/" >> .gitignore` right in your terminal).*
+  
+  
+    Run this command to tell Git to stop tracking the `expo-temp` folder cache without actually deleting your actual files:
+    ```bash
+    git rm --cached expo-temp -f
+    ```
+  
+  
+    Now that Git knows to bypass that folder, re-stage your project files:
+    ```bash
+    git add .
+    ```
+  
+  
+    Now you can smoothly wrap up your first upload:

@@ -1,0 +1,13 @@
+{
+  "name": "BANGIS",
+  "description": "The ultimate crowdsourced fuel price tracking platform for the Philippines.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ],
+  "majorCapabilities": [
+    "Maps",
+    "Data Visualization",
+    "Real-time Updates"
+  ]
+}
