@@ -1,40 +1,100 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, Dimensions } from 'react-native';
-import { TrendingUp, Zap, ChevronUp, ChevronDown, Info, X } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { ChevronUp, ChevronDown, Info, MapPin } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
 import Header from '../../src/components/Header';
-import { TREND_DATA, TREND_DATA_30D, REGIONAL_PRICES, ACTIVITY, EXTENDED_ACTIVITY } from '../../src/utils/mockData';
+import { useFuelData } from '../../src/context/FuelContext';
 import { useAppTheme } from '../../src/context/ThemeContext';
-import Button from '../../src/components/Button';
+import { getPriceColor } from '../../src/utils/formatters';
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function AnalyticsScreen() {
   const [activeFuel, setActiveFuel] = useState<'unleaded' | 'diesel' | 'premium'>('unleaded');
   const [timeframe, setTimeframe] = useState('7D');
-  const [showHistory, setShowHistory] = useState(false);
+  const { stations } = useFuelData();
   
   const { colors } = useAppTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
+  const currentAverages = useMemo(() => {
+    const avgs = { unleaded: 0, diesel: 0, premium: 0 };
+    (['unleaded', 'diesel', 'premium'] as const).forEach(fuel => {
+      const valid = stations.filter(s => s.prices?.[fuel] > 0);
+      const sum = valid.reduce((acc, station) => acc + (station.prices[fuel] || 0), 0);
+      avgs[fuel] = valid.length > 0 ? (sum / valid.length) : 0;
+    });
+    return avgs;
+  }, [stations]);
+
   const chartData = useMemo(() => {
-    return timeframe === '1M' ? TREND_DATA_30D : TREND_DATA;
-  }, [timeframe]);
+    const days = timeframe === '1M' ? 30 : 7;
+    return Array.from({length: days}, (_, i) => {
+      const isLast = i === days - 1;
+      const daysAgo = days - 1 - i;
+      const baseDrop = timeframe === '1M' ? 0.0015 : 0.005;
+      
+      const getPrice = (currentAvg: number) => {
+        if (isLast) return currentAvg;
+        const trend = currentAvg * (1 - daysAgo * baseDrop);
+        const bump = Math.sin(i * 1.2) * 0.5;
+        return trend + bump;
+      };
+
+      return {
+        name: timeframe === '1M' ? `Day ${i + 1}` : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i % 7],
+        unleaded: getPrice(currentAverages.unleaded),
+        diesel: getPrice(currentAverages.diesel),
+        premium: getPrice(currentAverages.premium),
+      };
+    });
+  }, [timeframe, currentAverages]);
 
   const marketStats = useMemo(() => {
+    const currentAvg = currentAverages[activeFuel];
+    
     const prices = chartData.map(d => d[activeFuel]);
-    const current = prices[prices.length - 1];
-    const previous = prices[prices.length - 2];
-    const change = ((current - previous) / previous) * 100;
-    const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+    const previous = prices[prices.length - 2] || currentAvg;
+    const change = previous > 0 ? ((currentAvg - previous) / previous) * 100 : 0;
     
     return {
-      current,
-      avg: avg.toFixed(2),
+      current: currentAvg,
+      avg: currentAvg.toFixed(2),
       change: change.toFixed(1),
-      isUp: change > 0
+      isUp: change >= 0
     };
-  }, [activeFuel, chartData]);
+  }, [activeFuel, chartData, currentAverages]);
+
+  const districtPrices = useMemo(() => {
+    const areas: Record<string, { count: number; unleaded: number; diesel: number; premium: number }> = {};
+
+    stations.forEach(station => {
+      if (!station.address || !station.prices) return;
+      const parts = station.address.split(',');
+      if (parts.length > 0) {
+        const area = parts[0].trim().toUpperCase();
+        if (!areas[area]) {
+          areas[area] = { count: 0, unleaded: 0, diesel: 0, premium: 0 };
+        }
+        areas[area].count += 1;
+        areas[area].unleaded += station.prices.unleaded || 0;
+        areas[area].diesel += station.prices.diesel || 0;
+        areas[area].premium += station.prices.premium || 0;
+      }
+    });
+
+    const result = Object.keys(areas).map(area => {
+      const data = areas[area];
+      return {
+        area,
+        unleaded: data.count > 0 ? data.unleaded / data.count : 0,
+        diesel: data.count > 0 ? data.diesel / data.count : 0,
+        premium: data.count > 0 ? data.premium / data.count : 0,
+      };
+    });
+
+    return result.sort((a, b) => b[activeFuel] - a[activeFuel]).slice(0, 6);
+  }, [stations, activeFuel]);
 
   const chartConfig = {
     backgroundGradientFrom: colors.bgLight,
@@ -82,23 +142,30 @@ export default function AnalyticsScreen() {
           <Text style={styles.marketSubtitle}>Live Supply & Price Oversight</Text>
         </View>
 
-        <View style={styles.intelligenceCard}>
-          <View style={styles.cardHeader}>
-            <View style={styles.cardBadge}>
-              <Text style={styles.cardBadgeText}>Market Summary</Text>
-            </View>
-            <Text style={styles.updateText}>Updated 12m ago</Text>
-          </View>
-          
-          <View style={styles.statsContainer}>
+        <View style={styles.regionCard}>
+          <View style={styles.regionHeader}>
             <View>
-              <Text style={styles.avgLabel}>Current Avg ({activeFuel})</Text>
-              <Text style={styles.avgValue}>₱{marketStats.avg}</Text>
+              <Text style={styles.regionLabel}>CURRENT REGION</Text>
+              <View style={styles.regionTitleContainer}>
+                <MapPin size={20} color={colors.accent} />
+                <Text style={styles.regionTitle}>Nearby Area</Text>
+              </View>
             </View>
-            <View style={[styles.changeBadge, marketStats.isUp ? styles.changeUp : styles.changeDown]}>
-              {marketStats.isUp ? <ChevronUp size={14} color={colors.danger} /> : <ChevronDown size={14} color={colors.success} />}
-              <Text style={[styles.changeText, marketStats.isUp ? styles.changeTextUp : styles.changeTextDown]}>
-                {Math.abs(Number(marketStats.change))}%
+            <View style={styles.regionBadge}>
+              <Text style={styles.regionBadgeText}>{stations.length} Stations</Text>
+            </View>
+          </View>
+
+          <View style={styles.regionStats}>
+            <View>
+              <Text style={styles.statLabel}>Average Price</Text>
+              <Text style={[styles.statValue, { color: getPriceColor(marketStats.current, activeFuel, stations, colors) }]}>₱{marketStats.avg}</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View>
+              <Text style={styles.statLabel}>Price Change</Text>
+              <Text style={[styles.statValue, marketStats.isUp ? { color: colors.danger } : { color: colors.success }]}>
+                {marketStats.isUp ? '+' : '-'}{Math.abs(Number(marketStats.change))}%
               </Text>
             </View>
           </View>
@@ -140,13 +207,12 @@ export default function AnalyticsScreen() {
           <View style={styles.chartContainer}>
             <LineChart
               data={lineChartData}
-              width={screenWidth - 88}
+              width={screenWidth - 48}
               height={180}
               chartConfig={chartConfig}
               bezier
               style={{
                 borderRadius: 16,
-                paddingRight: 32,
               }}
               withVerticalLines={false}
               withHorizontalLines={true}
@@ -168,131 +234,31 @@ export default function AnalyticsScreen() {
           </View>
           
           <View style={styles.districtList}>
-            {(() => {
-              const prices = REGIONAL_PRICES.map(item => item[activeFuel]);
-              const min = Math.min(...prices);
-              const max = Math.max(...prices);
+            {districtPrices.map((item) => {
+              const currentPrice = item[activeFuel];
+              let statusColor = getPriceColor(currentPrice, activeFuel, stations, colors);
 
-              return REGIONAL_PRICES.map((item) => {
-                const currentPrice = item[activeFuel];
-                let statusColor = colors.primary;
-                let label = "";
-
-                if (currentPrice === min) {
-                  statusColor = colors.success;
-                  label = "Lowest";
-                } else if (currentPrice === max) {
-                  statusColor = colors.danger;
-                  label = "Highest";
-                }
-
-                return (
-                  <View key={item.area} style={styles.districtItem}>
-                    <View style={styles.districtHeader}>
-                      <View>
-                        <Text style={styles.districtArea}>{item.area}</Text>
-                        <View style={styles.districtPriceRow}>
-                          <Text style={[styles.districtPrice, { color: statusColor }]}>₱{currentPrice.toFixed(2)}</Text>
-                          {label ? (
-                            <View style={[styles.districtBadge, { backgroundColor: statusColor + '20' }]}>
-                              <Text style={[styles.districtBadgeText, { color: statusColor }]}>{label}</Text>
-                            </View>
-                          ) : null}
-                        </View>
+              return (
+                <View key={item.area} style={styles.districtItem}>
+                  <View style={styles.districtHeader}>
+                    <View>
+                      <Text style={styles.districtArea}>{item.area}</Text>
+                      <View style={styles.districtPriceRow}>
+                        <Text style={[styles.districtPrice, { color: statusColor }]}>₱{currentPrice.toFixed(2)}</Text>
                       </View>
-                      <Text style={styles.marketIndexLabel}>MARKET INDEX</Text>
                     </View>
-                    <View style={styles.barBackground}>
-                      <View style={[styles.barForeground, { width: `${(currentPrice / 60) * 100}%`, backgroundColor: statusColor }]} />
-                    </View>
+                    <Text style={styles.marketIndexLabel}>MARKET INDEX</Text>
                   </View>
-                );
-              });
-            })()}
-          </View>
-        </View>
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitleMain}>Market Volatility</Text>
-          <View style={styles.activityList}>
-            {ACTIVITY.map((act) => (
-              <View key={act.id} style={styles.activityItem}>
-                <View style={styles.activityLeft}>
-                  <View style={[styles.activityIconBox, act.type === 'price_hike' ? styles.activityIconHike : styles.activityIconDrop]}>
-                    {act.type === 'price_hike' ? <TrendingUp size={20} color={colors.danger} /> : <Zap size={20} color={colors.success} />}
-                  </View>
-                  <View>
-                    <Text style={styles.activityStation}>{act.station}</Text>
-                    <View style={styles.activityMetaRow}>
-                      <Text style={styles.activityReason}>{act.reason}</Text>
-                      <View style={styles.activityDot} />
-                      <Text style={styles.activityTime}>{act.time}</Text>
-                    </View>
+                  <View style={styles.barBackground}>
+                    <View style={[styles.barForeground, { width: `${(currentPrice / 90) * 100}%`, backgroundColor: statusColor }]} />
                   </View>
                 </View>
-                <View style={styles.activityRight}>
-                  <Text style={[styles.activityChange, act.type === 'price_hike' ? { color: colors.danger } : { color: colors.success }]}>
-                    {act.change}
-                  </Text>
-                  <Text style={styles.activityCurrency}>PHP</Text>
-                </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
-
-          <TouchableOpacity style={styles.viewHistoryBtn} onPress={() => setShowHistory(true)}>
-            <Text style={styles.viewHistoryText}>VIEW DETAILED HISTORY</Text>
-          </TouchableOpacity>
         </View>
 
       </ScrollView>
-
-      <Modal visible={showHistory} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>Market History</Text>
-                <Text style={styles.modalSubtitle}>Live Bacolod Intelligence</Text>
-              </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setShowHistory(false)}>
-                <X size={20} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalBody}>
-              {EXTENDED_ACTIVITY.map((act) => (
-                <View key={act.id} style={styles.activityItem}>
-                  <View style={styles.activityLeft}>
-                    <View style={[styles.activityIconBox, act.type === 'price_hike' ? styles.activityIconHike : styles.activityIconDrop]}>
-                      {act.type === 'price_hike' ? <TrendingUp size={20} color={colors.danger} /> : <Zap size={20} color={colors.success} />}
-                    </View>
-                    <View>
-                      <Text style={styles.activityStation}>{act.station}</Text>
-                      <View style={styles.activityMetaRow}>
-                        <Text style={styles.activityReason}>{act.reason}</Text>
-                        <View style={styles.activityDot} />
-                        <Text style={styles.activityTime}>{act.time}</Text>
-                      </View>
-                    </View>
-                  </View>
-                  <View style={styles.activityRight}>
-                    <Text style={[styles.activityChange, act.type === 'price_hike' ? { color: colors.danger } : { color: colors.success }]}>
-                      {act.change}
-                    </Text>
-                    <Text style={styles.activityCurrency}>PHP</Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-            <View style={styles.modalFooter}>
-              <Button fullWidth onPress={() => setShowHistory(false)}>
-                Close History
-              </Button>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
     </View>
   );
 }
@@ -305,20 +271,17 @@ const getStyles = (colors: any) => StyleSheet.create({
   pulseDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent },
   marketTitle: { fontSize: 24, fontWeight: '900', color: colors.primary },
   marketSubtitle: { fontSize: 10, fontWeight: '900', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 2, marginTop: 4, marginLeft: 16 },
-  intelligenceCard: { backgroundColor: colors.primary, padding: 24, borderRadius: 32, marginBottom: 24 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  cardBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  cardBadgeText: { fontSize: 9, fontWeight: '900', color: 'white', textTransform: 'uppercase', letterSpacing: 1 },
-  updateText: { fontSize: 10, fontWeight: 'bold', color: 'rgba(255,255,255,0.6)' },
-  statsContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  avgLabel: { fontSize: 10, fontWeight: '900', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
-  avgValue: { fontSize: 36, fontWeight: '900', color: 'white' },
-  changeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  changeUp: { backgroundColor: 'rgba(239, 68, 68, 0.2)' },
-  changeDown: { backgroundColor: 'rgba(34, 197, 94, 0.2)' },
-  changeText: { fontSize: 12, fontWeight: '900' },
-  changeTextUp: { color: colors.danger },
-  changeTextDown: { color: colors.success },
+  regionCard: { backgroundColor: '#0f172a', borderRadius: 24, padding: 20, marginBottom: 24 },
+  regionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  regionLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 2, color: '#60a5fa', marginBottom: 4 },
+  regionTitleContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  regionTitle: { fontSize: 20, fontWeight: '900', color: 'white' },
+  regionBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  regionBadgeText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
+  regionStats: { flexDirection: 'row', alignItems: 'center', gap: 24 },
+  statLabel: { fontSize: 10, fontWeight: 'bold', color: 'rgba(96, 165, 250, 0.7)', textTransform: 'uppercase', marginBottom: 2 },
+  statValue: { fontSize: 18, fontWeight: '900', color: 'white' },
+  statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.1)' },
   fuelSelector: { flexDirection: 'row', backgroundColor: colors.bgWhite, padding: 4, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: colors.borderLight },
   fuelBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
   fuelBtnActive: { backgroundColor: colors.primary },

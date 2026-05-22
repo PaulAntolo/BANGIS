@@ -120,7 +120,9 @@ export default function SecurityScreen() {
 
 const getStyles = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bgLight },
+  content: { padding: 20, paddingBottom: 40 },
   accountCard: { backgroundColor: colors.bgWhite, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: colors.borderLight, marginBottom: 24 },
+  accountHeader: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 },
   avatarSection: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   avatarBorder: { width: 64, height: 64, borderRadius: 32, borderWidth: 4, borderColor: colors.primary + '10', padding: 2 },
   avatarImage: { width: '100%', height: '100%', borderRadius: 28, backgroundColor: colors.bgLight },

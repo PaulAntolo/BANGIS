@@ -33,9 +33,10 @@ async function generate() {
     const brand = BRANDS[Math.floor(Math.random() * BRANDS.length)];
     const loc = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
     
-    // Slight random offset for map coordinates
+    // Latitude offset: normal north/south scatter
     const lat = CENTER_LAT + ((Math.random() - 0.5) * 0.08);
-    const lng = CENTER_LNG + ((Math.random() - 0.5) * 0.08);
+    // Longitude offset: mostly east (+), slightly west (-) to avoid ocean
+    const lng = CENTER_LNG + ((Math.random() * 0.08) - 0.01);
 
     const stationId = `mock_bacolod_${i}`;
     const data = {

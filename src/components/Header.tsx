@@ -58,7 +58,7 @@ export default function Header({ title, showBack, transparent }: HeaderProps) {
         </TouchableOpacity>
         
         <TouchableOpacity 
-          onPress={() => router.push('/(tabs)/profile')} 
+          onPress={() => router.push('/profile')} 
           style={styles.profileButton}
         >
           <Image 

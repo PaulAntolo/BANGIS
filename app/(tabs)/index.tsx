@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Modal, Image } from 'react-native';
-import { Search as SearchIcon, Navigation, Fuel, ArrowLeft } from 'lucide-react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Modal, Image, FlatList } from 'react-native';
+import { Search as SearchIcon, Navigation, Fuel, ArrowLeft, Clock, Coffee, CreditCard, Wind, ShieldCheck, MapPin, Info } from 'lucide-react-native';
 import Header from '../../src/components/Header';
 import OpenStreetMap, { OpenStreetMapHandle } from '../../src/components/OpenStreetMap';
-import { formatCurrency } from '../../src/utils/formatters';
+import { formatCurrency, getPriceColor } from '../../src/utils/formatters';
 import { calculateDistance, getDistanceLabel } from '../../src/utils/geo';
 import * as Location from 'expo-location';
 import { useFuelData } from '../../src/context/FuelContext';
@@ -16,8 +16,7 @@ export default function HomeScreen() {
   const styles = useMemo(() => getStyles(colors), [colors]);
   const isDark = colors.bgLight === '#111827';
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(true);
   const [selectedStation, setSelectedStation] = useState<any>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [navStation, setNavStation] = useState<any>(null);
@@ -34,16 +33,10 @@ export default function HomeScreen() {
 
   const baseFilteredStations = useMemo(() => {
     if (stations.length === 0) return [];
-    return stations.filter(
-      (station) =>
-        station.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        station.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        station.address.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [stations, searchQuery]);
+    return stations;
+  }, [stations]);
 
   const mapStations = useMemo(() => {
-    if (isNavigating) return [];
     return baseFilteredStations.map((s) => ({
       id: s.id,
       lat: s.coords.lat,
@@ -51,9 +44,10 @@ export default function HomeScreen() {
       name: s.name,
       brand: s.brand,
       priceLabel: formatCurrency(getSelectedPrice(s.prices, selectedFuelType)),
+      priceColor: getPriceColor(getSelectedPrice(s.prices, selectedFuelType), selectedFuelType, stations, colors),
       logoUri: s.logoUri,
     }));
-  }, [baseFilteredStations, selectedFuelType, isNavigating]);
+  }, [baseFilteredStations, selectedFuelType, isNavigating, stations, colors]);
 
   const filteredStations = useMemo(() => {
     const withDetails = baseFilteredStations.map((s) => ({
@@ -77,7 +71,29 @@ export default function HomeScreen() {
     return sorted;
   }, [baseFilteredStations, selectedFuelType, userLocation]);
 
-  const bestStation = filteredStations.find((s) => s.isBestValue) || filteredStations[0];
+  const topRecommendations = useMemo(() => {
+    const topStations = filteredStations;
+    if (topStations.length === 0) return [];
+    
+    return topStations.map((station, index) => {
+      let recommendationReason = '';
+      if (index === 0) {
+        if (station.distanceValue > 5) {
+          recommendationReason = 'Cheapest in the area, but quite a drive from your location.';
+        } else {
+          recommendationReason = 'Absolute best value and conveniently close to you.';
+        }
+      } else {
+        const cheapest = topStations[0];
+        if (station.distanceValue < cheapest.distanceValue - 2) {
+          recommendationReason = `Slightly more expensive than the cheapest option, but much closer to you—saving you time and fuel.`;
+        } else {
+          recommendationReason = 'A great alternative choice in your vicinity.';
+        }
+      }
+      return { ...station, recommendationReason, index };
+    });
+  }, [filteredStations]);
 
   const handleLocateMe = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -188,18 +204,6 @@ export default function HomeScreen() {
 
       {!isNavigating && userLocation && (
         <View style={styles.searchOverlay}>
-          <View style={styles.searchInputContainer}>
-            <SearchIcon size={20} color={colors.textMuted} style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search stations, brands..."
-              placeholderTextColor={colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onFocus={() => setShowSuggestions(true)}
-            />
-          </View>
-
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -219,67 +223,70 @@ export default function HomeScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-
-          {showSuggestions && searchQuery.length > 0 && (
-            <View style={styles.suggestionsContainer}>
-              <ScrollView style={{ maxHeight: 200 }}>
-                {filteredStations.map((station) => (
-                  <TouchableOpacity
-                    key={station.id}
-                    style={styles.suggestionItem}
-                    onPress={() => {
-                      setSearchQuery(station.name);
-                      setShowSuggestions(false);
-                      setSelectedStation(station);
-                    }}
-                  >
-                    <View style={styles.suggestionLeft}>
-                      {station.logo ? (
-                        <Image source={station.logo} style={styles.suggestionLogo} resizeMode="contain" />
-                      ) : null}
-                      <Text style={styles.suggestionName}>{station.name}</Text>
-                    </View>
-                    <Text style={styles.suggestionPrice}>
-                      {formatCurrency(getSelectedPrice(station.prices, selectedFuelType))}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
         </View>
       )}
 
-      {!isNavigating && bestStation && !selectedStation && (
-        <View style={styles.bottomCard}>
-          <View style={styles.cardHeader}>
-            <View style={styles.cardHeaderLeft}>
-              {bestStation.logo ? (
-                <Image source={bestStation.logo} style={styles.cardLogo} resizeMode="contain" />
-              ) : null}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.badgeText}>{bestStation.isBestValue ? 'BEST VALUE' : 'TOP RESULT'}</Text>
-                <Text style={styles.stationName}>{bestStation.name}</Text>
-                <Text style={styles.stationDistance}>
-                  {getDistanceLabel(bestStation, [userLocation.latitude, userLocation.longitude])} away
-                </Text>
+      {!isNavigating && userLocation && topRecommendations.length > 0 && !selectedStation && (
+        <View style={styles.recommendationsContainer}>
+          <View style={styles.recommendationsHeader}>
+            <Text style={styles.recommendationsTitle}>Top Recommendations</Text>
+            <TouchableOpacity 
+              style={styles.toggleBtn}
+              onPress={() => setShowRecommendations(!showRecommendations)}
+            >
+              <Text style={styles.toggleBtnText}>{showRecommendations ? 'HIDE' : 'SHOW'}</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {showRecommendations && (
+            <FlatList
+              showsVerticalScrollIndicator={false}
+              data={topRecommendations}
+              keyExtractor={item => item.id}
+              contentContainerStyle={styles.recommendationsList}
+              renderItem={({ item, index }) => (
+              <View style={styles.recCard}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardHeaderLeft}>
+                    {item.logo ? (
+                      <Image source={item.logo} style={styles.cardLogo} resizeMode="contain" />
+                    ) : null}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.badgeText}>
+                        {index === 0 ? 'BEST VALUE' : `#${index + 1} CHEAPEST`}
+                      </Text>
+                      <Text style={styles.stationName} numberOfLines={1}>{item.name}</Text>
+                      <Text style={styles.stationDistance}>
+                        {getDistanceLabel(item, [userLocation.latitude, userLocation.longitude])} away
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                
+                <View style={styles.recReasonBox}>
+                  <Text style={styles.recReasonText}>{item.recommendationReason}</Text>
+                </View>
+                
+                <View style={styles.recBottomRow}>
+                  <View>
+                    <Text style={[styles.stationPrice, { color: getPriceColor(getSelectedPrice(item.prices, selectedFuelType), selectedFuelType, stations, colors) }]}>
+                      {formatCurrency(getSelectedPrice(item.prices, selectedFuelType))}
+                    </Text>
+                    <Text style={styles.priceUnit}>{selectedFuelType} / L</Text>
+                  </View>
+                  <View style={styles.recActions}>
+                    <TouchableOpacity style={styles.btnNavigate} onPress={() => handleNavigate(item)}>
+                      <Text style={styles.btnNavigateText}>GO</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.btnDetails} onPress={() => setSelectedStation(item)}>
+                      <Text style={styles.btnDetailsText}>INFO</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.stationPrice}>
-                {formatCurrency(getSelectedPrice(bestStation.prices, selectedFuelType))}
-              </Text>
-              <Text style={styles.priceUnit}>{selectedFuelType} / L</Text>
-            </View>
-          </View>
-          <View style={styles.cardActions}>
-            <TouchableOpacity style={styles.btnNavigate} onPress={() => handleNavigate(bestStation)}>
-              <Text style={styles.btnNavigateText}>NAVIGATE NOW</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.btnDetails} onPress={() => setSelectedStation(bestStation)}>
-              <Text style={styles.btnDetailsText}>DETAILS</Text>
-            </TouchableOpacity>
-          </View>
+            )}
+          />
+          )}
         </View>
       )}
 
@@ -325,6 +332,51 @@ export default function HomeScreen() {
                       <Text style={styles.priceValue}>{formatCurrency(selectedStation.prices.premium)}</Text>
                     </View>
                   </View>
+
+                  <View style={styles.infoSection}>
+                    <Text style={styles.infoSectionTitle}>Station Details</Text>
+                    <View style={styles.infoRow}>
+                      <Clock size={16} color={colors.textSecondary} />
+                      <Text style={styles.infoText}>Open 24/7</Text>
+                    </View>
+                    {selectedStation.description ? (
+                       <View style={styles.infoRow}>
+                         <Info size={16} color={colors.textSecondary} />
+                         <Text style={styles.infoText}>{selectedStation.description}</Text>
+                       </View>
+                    ) : null}
+                    <View style={styles.infoRow}>
+                      <ShieldCheck size={16} color={colors.textSecondary} />
+                      <Text style={styles.infoText}>
+                        {selectedStation.verificationCount ? `Verified by ${selectedStation.verificationCount} users` : 'Verified Station'}
+                      </Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <MapPin size={16} color={colors.textSecondary} />
+                      <Text style={styles.infoText}>
+                        {getDistanceLabel(selectedStation, [userLocation.latitude, userLocation.longitude])} from your location
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.infoSection}>
+                    <Text style={styles.infoSectionTitle}>Amenities</Text>
+                    <View style={styles.amenitiesRow}>
+                      <View style={styles.amenityTag}>
+                        <Coffee size={14} color={colors.primary} />
+                        <Text style={styles.amenityText}>Store</Text>
+                      </View>
+                      <View style={styles.amenityTag}>
+                        <CreditCard size={14} color={colors.primary} />
+                        <Text style={styles.amenityText}>Card</Text>
+                      </View>
+                      <View style={styles.amenityTag}>
+                        <Wind size={14} color={colors.primary} />
+                        <Text style={styles.amenityText}>Air/Water</Text>
+                      </View>
+                    </View>
+                  </View>
+
                   <TouchableOpacity
                     style={styles.btnNavigateModal}
                     onPress={() => handleNavigate(selectedStation)}
@@ -407,21 +459,86 @@ const getStyles = (colors: any) =>
     suggestionLogo: { width: 28, height: 28 },
     suggestionName: { fontSize: 14, fontWeight: 'bold', color: colors.textPrimary, flex: 1 },
     suggestionPrice: { fontSize: 14, fontWeight: 'bold', color: colors.success },
-    bottomCard: {
+    recommendationsContainer: {
       position: 'absolute',
-      bottom: 16,
-      left: 16,
-      right: 16,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      maxHeight: '60%',
+      paddingBottom: 16,
+      zIndex: 10,
+    },
+    recommendationsHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      marginBottom: 8,
+    },
+    recommendationsTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: colors.primary,
+      backgroundColor: 'rgba(255,255,255,0.9)',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 8,
+      overflow: 'hidden',
+    },
+    toggleBtn: {
+      backgroundColor: colors.bgWhite,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    toggleBtnText: {
+      fontSize: 10,
+      fontWeight: 'bold',
+      color: colors.primary,
+    },
+    recommendationsList: {
+      paddingHorizontal: 16,
+      paddingBottom: 80,
+    },
+    recCard: {
+      width: '100%',
+      marginBottom: 16,
       backgroundColor: colors.bgWhite,
       borderRadius: 24,
-      padding: 20,
+      padding: 16,
       elevation: 10,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.1,
       shadowRadius: 10,
     },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+    recReasonBox: {
+      backgroundColor: colors.bgLight,
+      padding: 10,
+      borderRadius: 12,
+      marginVertical: 12,
+    },
+    recReasonText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+      lineHeight: 16,
+    },
+    recBottomRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
+    },
+    recActions: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
     cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
     cardLogo: { width: 44, height: 44 },
     badgeText: {
@@ -435,30 +552,29 @@ const getStyles = (colors: any) =>
       alignSelf: 'flex-start',
       marginBottom: 4,
     },
-    stationName: { fontSize: 18, fontWeight: 'bold', color: colors.primary },
+    stationName: { fontSize: 16, fontWeight: 'bold', color: colors.primary },
     stationDistance: { fontSize: 12, color: colors.textMuted, fontWeight: '500' },
     stationPrice: { fontSize: 24, fontWeight: '900', color: colors.primary },
-    priceUnit: { fontSize: 10, fontWeight: 'bold', color: colors.textMuted },
-    cardActions: { flexDirection: 'row', gap: 12 },
+    priceUnit: { fontSize: 10, fontWeight: 'bold', color: colors.textMuted, marginTop: -4 },
     btnNavigate: {
-      flex: 1,
       backgroundColor: colors.accent,
-      paddingVertical: 14,
-      borderRadius: 16,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 12,
       alignItems: 'center',
     },
     btnNavigateText: { color: 'white', fontWeight: 'bold', fontSize: 12 },
     btnDetails: {
-      flex: 1,
       backgroundColor: colors.primary + '1a',
-      paddingVertical: 14,
-      borderRadius: 16,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 12,
       alignItems: 'center',
     },
     btnDetailsText: { color: colors.primary, fontWeight: 'bold', fontSize: 12 },
     navOverlay: {
       position: 'absolute',
-      top: 90,
+      bottom: 24,
       left: 16,
       right: 16,
       backgroundColor: colors.primary,
@@ -516,13 +632,20 @@ const getStyles = (colors: any) =>
     },
     priceLabel: { fontSize: 10, fontWeight: 'bold', color: colors.textMuted, marginBottom: 4 },
     priceValue: { fontSize: 16, fontWeight: '900', color: colors.primary },
+    infoSection: { marginBottom: 24 },
+    infoSectionTitle: { fontSize: 14, fontWeight: 'bold', color: colors.primary, marginBottom: 12, textTransform: 'uppercase' },
+    infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+    infoText: { fontSize: 14, color: colors.textSecondary, flex: 1 },
+    amenitiesRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    amenityTag: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primary + '15', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
+    amenityText: { fontSize: 12, fontWeight: 'bold', color: colors.primary },
     btnNavigateModal: {
       backgroundColor: colors.accent,
       paddingVertical: 16,
       borderRadius: 16,
       alignItems: 'center',
     },
-    mapControls: { position: 'absolute', right: 16, top: 160 },
+    mapControls: { position: 'absolute', right: 16, bottom: 250 },
     controlBtn: {
       width: 44,
       height: 44,

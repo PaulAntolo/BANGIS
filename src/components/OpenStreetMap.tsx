@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, ViewStyle } from 'react-native';
+import { StyleSheet, ViewStyle, Platform, View, Text } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
 export type MapCoordinate = { latitude: number; longitude: number };
@@ -11,6 +11,7 @@ export type MapStation = {
   name: string;
   brand: string;
   priceLabel: string;
+  priceColor?: string;
   logoUri?: string;
 };
 
@@ -25,7 +26,7 @@ type Props = {
 
 function buildMapHtml(isDark: boolean) {
   const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
     : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
   const attribution = isDark
     ? '&copy; OpenStreetMap &copy; CARTO'
@@ -169,6 +170,7 @@ const OpenStreetMap = React.forwardRef<OpenStreetMapHandle, Props>(function Open
   const webRef = useRef<WebView>(null);
   const html = useMemo(() => buildMapHtml(isDark), [isDark]);
   const ready = useRef(false);
+  const prevStationsStr = useRef('');
 
   const post = useCallback((payload: object) => {
     if (!webRef.current) return;
@@ -186,7 +188,13 @@ const OpenStreetMap = React.forwardRef<OpenStreetMapHandle, Props>(function Open
   }, [post, stations, userLocation, routePoints]);
 
   useEffect(() => {
-    if (ready.current) post({ type: 'updateStations', stations });
+    if (ready.current) {
+      const currentStationsStr = JSON.stringify(stations);
+      if (currentStationsStr !== prevStationsStr.current) {
+        post({ type: 'updateStations', stations });
+        prevStationsStr.current = currentStationsStr;
+      }
+    }
   }, [stations, post]);
 
   useEffect(() => {

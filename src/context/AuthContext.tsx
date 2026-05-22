@@ -22,6 +22,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   signUp: (data: any) => Promise<void>;
   updateUser: (newData: any) => Promise<void>;
+  toggleBookmark: (stationId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             photoURL: firebaseUser.photoURL || null,
             rank: 'Operative',
             contributionCount: 0,
+            bookmarks: [],
             createdAt: serverTimestamp()
           };
           await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
@@ -86,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       photoURL: null,
       rank: 'Operative',
       contributionCount: 0,
+      bookmarks: [],
       createdAt: serverTimestamp()
     };
 
@@ -103,12 +106,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const toggleBookmark = async (stationId: string) => {
+    if (!user || !profile) return;
+    try {
+      const currentBookmarks = profile.bookmarks || [];
+      let newBookmarks;
+      if (currentBookmarks.includes(stationId)) {
+        newBookmarks = currentBookmarks.filter((id: string) => id !== stationId);
+      } else {
+        newBookmarks = [...currentBookmarks, stationId];
+      }
+      await updateDoc(doc(db, 'users', user.uid), { bookmarks: newBookmarks });
+      setProfile((prev: any) => ({ ...prev, bookmarks: newBookmarks }));
+    } catch (err) {
+      console.error("Error toggling bookmark:", err);
+    }
+  };
+
   const logout = async () => {
     await signOut(auth);
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, isLoading, login, loginAsGuest, logout, signUp, updateUser, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, profile, isLoading, login, loginAsGuest, logout, signUp, updateUser, signInWithGoogle, toggleBookmark }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { Image, ImageSourcePropType } from 'react-native';
+import { Image, ImageSourcePropType, Platform } from 'react-native';
 
 /** Local assets in assets/logo — keyed by normalized brand slug */
 const BRAND_LOGO_ASSETS: Record<string, ImageSourcePropType> = {
@@ -34,16 +34,28 @@ export function getBrandLogo(brand: string): ImageSourcePropType | null {
   return BRAND_LOGO_ASSETS[key] ?? null;
 }
 
-/** URI string for WebView / remote Image when needed */
 export function getBrandLogoUri(brand: string): string | undefined {
   const asset = getBrandLogo(brand);
   if (!asset) return undefined;
-  const resolved = Image.resolveAssetSource(asset);
-  return resolved?.uri;
+  
+  if (Platform.OS === 'web') {
+    return typeof asset === 'string' ? asset : (asset as any)?.uri;
+  }
+  
+  return Image.resolveAssetSource?.(asset)?.uri;
 }
 
 export function withStationLogo<T extends { brand: string }>(station: T): T & { logo: ImageSourcePropType | null; logoUri?: string } {
   const logo = getBrandLogo(station.brand);
-  const logoUri = logo ? Image.resolveAssetSource(logo).uri : undefined;
+  let logoUri: string | undefined;
+  
+  if (logo) {
+    if (Platform.OS === 'web') {
+      logoUri = typeof logo === 'string' ? logo : (logo as any)?.uri;
+    } else {
+      logoUri = Image.resolveAssetSource?.(logo)?.uri;
+    }
+  }
+  
   return { ...station, logo, logoUri };
 }

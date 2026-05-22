@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Bookmark, MapPin } from 'lucide-react-native';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, getPriceColor } from '../utils/formatters';
 import { getDistanceLabel } from '../utils/geo';
-import { theme } from '../constants/theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { useFuelData } from '../context/FuelContext';
 
 interface StationCardProps {
   station: any;
@@ -12,7 +14,15 @@ interface StationCardProps {
 }
 
 export default function StationCard({ station, fuelType, userLocation = [14.5995, 120.9842] }: StationCardProps) {
-  const price = station.prices[fuelType.toLowerCase()] || station.prices.unleaded;
+  const price = station.prices[fuelType.toLowerCase()] || station.prices.unleaded || 0;
+  const { colors } = useAppTheme();
+  const { profile, toggleBookmark } = useAuth();
+  const { stations } = useFuelData();
+  
+  const priceColor = getPriceColor(price, fuelType, stations, colors);
+  
+  const isBookmarked = profile?.bookmarks?.includes(station.id);
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   return (
     <View style={styles.card}>
@@ -25,7 +35,7 @@ export default function StationCard({ station, fuelType, userLocation = [14.5995
         </View>
         <View style={styles.metaRow}>
           <View style={styles.distanceContainer}>
-            <MapPin size={12} color={theme.colors.accent} />
+            <MapPin size={12} color={colors.accent} />
             <Text style={styles.metaText}>{getDistanceLabel(station, userLocation)}</Text>
           </View>
           {station.verificationCount > 0 && (
@@ -40,28 +50,27 @@ export default function StationCard({ station, fuelType, userLocation = [14.5995
 
       <View style={styles.rightSection}>
         <View style={styles.priceContainer}>
-          <Text style={styles.priceValue}>{formatCurrency(price)}</Text>
+          <Text style={[styles.priceValue, { color: priceColor }]}>{formatCurrency(price)}</Text>
           <Text style={styles.priceUnit}>PHP / L</Text>
         </View>
-        <TouchableOpacity style={styles.bookmarkButton}>
-          <Bookmark size={20} color={theme.colors.textMuted} />
+        <TouchableOpacity style={styles.bookmarkButton} onPress={() => toggleBookmark(station.id)}>
+          <Bookmark size={20} color={isBookmarked ? colors.accent : colors.textMuted} fill={isBookmarked ? colors.accent : "transparent"} />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.bgWhite,
+    backgroundColor: colors.bgWhite,
     padding: 16,
-    borderRadius: theme.borderRadius.xl,
+    borderRadius: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
-    // Note: react-native shadows
+    borderColor: colors.borderLight,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -83,8 +92,8 @@ const styles = StyleSheet.create({
   },
   brandName: {
     fontWeight: 'bold',
-    color: theme.colors.primary,
-    fontSize: theme.typography.md,
+    color: colors.primary,
+    fontSize: 16,
   },
   metaRow: {
     flexDirection: 'row',
@@ -97,7 +106,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   metaText: {
-    color: theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 11,
     fontWeight: '500',
   },
@@ -110,16 +119,16 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: theme.colors.success,
+    backgroundColor: colors.success,
   },
   verifiedText: {
-    color: theme.colors.success,
+    color: colors.success,
     fontSize: 11,
     fontWeight: '500',
   },
   addressText: {
     fontSize: 10,
-    color: theme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -130,7 +139,7 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingLeft: 16,
     borderLeftWidth: 1,
-    borderLeftColor: theme.colors.bgLight,
+    borderLeftColor: colors.bgLight,
   },
   priceContainer: {
     alignItems: 'flex-end',
@@ -138,12 +147,12 @@ const styles = StyleSheet.create({
   priceValue: {
     fontSize: 20,
     fontWeight: '900',
-    color: theme.colors.primary,
+    color: colors.primary,
     lineHeight: 20,
   },
   priceUnit: {
     fontSize: 8,
-    color: theme.colors.textMuted,
+    color: colors.textMuted,
     fontWeight: 'bold',
     letterSpacing: 1,
     textTransform: 'uppercase',

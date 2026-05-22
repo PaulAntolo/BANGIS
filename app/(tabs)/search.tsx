@@ -7,6 +7,7 @@ import StationCard from '../../src/components/StationCard';
 import { calculateDistance, getSelectedPrice } from '../../src/utils/geo';
 import { useFuelData } from '../../src/context/FuelContext';
 import { useAppTheme } from '../../src/context/ThemeContext';
+import { getPriceColor } from '../../src/utils/formatters';
 
 export default function SearchScreen() {
   const { colors } = useAppTheme();
@@ -40,6 +41,7 @@ export default function SearchScreen() {
       return mapped.sort((a, b) => a.distanceValue - b.distanceValue);
     }
   }, [query, fuelType, sortBy]);
+
 
   const handleStationClick = (station: any) => {
     // Ideally we would pass params, but router push works
@@ -76,32 +78,6 @@ export default function SearchScreen() {
           ))}
         </ScrollView>
 
-        <View style={styles.regionCard}>
-          <View style={styles.regionHeader}>
-            <View>
-              <Text style={styles.regionLabel}>CURRENT REGION</Text>
-              <View style={styles.regionTitleContainer}>
-                <MapPin size={20} color={colors.accent} />
-                <Text style={styles.regionTitle}>Bacolod City</Text>
-              </View>
-            </View>
-            <View style={styles.regionBadge}>
-              <Text style={styles.regionBadgeText}>12 Stations</Text>
-            </View>
-          </View>
-
-          <View style={styles.regionStats}>
-            <View>
-              <Text style={styles.statLabel}>Average Price</Text>
-              <Text style={styles.statValue}>₱56.40</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View>
-              <Text style={styles.statLabel}>Price Change</Text>
-              <Text style={[styles.statValue, { color: colors.success }]}>+0.20</Text>
-            </View>
-          </View>
-        </View>
 
         <View style={styles.sortHeader}>
           <Text style={styles.sortTitle}>Nearby Value</Text>

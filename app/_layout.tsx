@@ -3,6 +3,11 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { NotificationProvider } from '../src/context/NotificationContext';
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { ThemeProvider } from '../src/context/ThemeContext';
+
+// Lock orientation immediately on load, before any component renders
+ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
 
 function InitialLayout() {
   const { user, isLoading } = useAuth();
@@ -11,17 +16,13 @@ function InitialLayout() {
 
   useEffect(() => {
     if (isLoading) return;
-
     const inAuthGroup = segments[0] === '(auth)';
-
-    if (user && !inAuthGroup) {
-      // User is authenticated but not in the auth group. That's fine, let them be in (tabs).
-      // Wait, if they are at the root or unauthenticated, we need to handle routing.
-    } else if (!user && !inAuthGroup) {
-      // Redirect to login
+    
+    // If not authenticated and not currently in the auth group, force redirect to login
+    if (!user && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (user && inAuthGroup) {
-      // Redirect to home
+      // Redirect to tabs if authenticated and trying to access auth screens
       router.replace('/(tabs)');
     }
   }, [user, isLoading, segments]);
@@ -36,8 +37,6 @@ function InitialLayout() {
 
   return <Slot />;
 }
-
-import { ThemeProvider } from '../src/context/ThemeContext';
 
 export default function RootLayout() {
   return (

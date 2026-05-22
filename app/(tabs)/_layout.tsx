@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Search, BarChart2, User } from 'lucide-react-native';
+import { Home, Search, BarChart2, User, Settings } from 'lucide-react-native';
 import { useAppTheme } from '../../src/context/ThemeContext';
 import { View } from 'react-native';
 
@@ -68,6 +68,15 @@ export default function TabLayout() {
           title: 'PROFILE',
           tabBarIcon: ({ color, focused }) => (
             <User size={focused ? 24 : 22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'SETTINGS',
+          tabBarIcon: ({ color, focused }) => (
+            <Settings size={focused ? 24 : 22} color={color} strokeWidth={focused ? 2.5 : 2} />
           ),
         }}
       />
