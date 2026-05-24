@@ -34,9 +34,7 @@ export default function Header({ title, showBack, transparent }: HeaderProps) {
           </TouchableOpacity>
         ) : (
           <View style={styles.logoContainer}>
-            <View style={styles.logoIconContainer}>
-              <Image source={require('../../assets/BANGIS-logo.png')} style={{ width: 24, height: 24, resizeMode: 'contain' }} />
-            </View>
+            <Image source={require('../../assets/BANGIS-logo.png')} style={{ width: 36, height: 36, resizeMode: 'contain' }} />
             <View style={styles.logoTextContainer}>
               <Text style={styles.logoTextMain}>BANGIS</Text>
               <Text style={styles.logoTextSub}>Fuel Tracker</Text>

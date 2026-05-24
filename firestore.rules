@@ -77,6 +77,11 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // --- Price History (scraped weekly by MetroFuelTracker pipeline) ---
+    match /price_history/{docId} {
+      allow read: if true;
+    }
+
     // --- Scraped Station Rules (GasWatch PH pipeline) ---
     match /scraped_stations/{stationId} {
       allow read: if true;

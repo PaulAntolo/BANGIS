@@ -11,10 +11,11 @@ interface StationCardProps {
   station: any;
   fuelType: string;
   userLocation?: [number, number];
+  onPress?: () => void;
 }
 
-export default function StationCard({ station, fuelType, userLocation = [14.5995, 120.9842] }: StationCardProps) {
-  const price = station.prices[fuelType.toLowerCase()] || station.prices.unleaded || 0;
+export default function StationCard({ station, fuelType, userLocation = [14.5995, 120.9842], onPress }: StationCardProps) {
+  const price = station.prices[fuelType.toLowerCase()] ?? station.prices.gas ?? null;
   const { colors } = useAppTheme();
   const { profile, toggleBookmark } = useAuth();
   const { stations } = useFuelData();
@@ -24,8 +25,10 @@ export default function StationCard({ station, fuelType, userLocation = [14.5995
   const isBookmarked = profile?.bookmarks?.includes(station.id);
   const styles = useMemo(() => getStyles(colors), [colors]);
 
+  const CardComponent = onPress ? TouchableOpacity : View;
+
   return (
-    <View style={styles.card}>
+    <CardComponent style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.leftSection}>
         <View style={styles.brandRow}>
           {station.logo ? (
@@ -50,14 +53,20 @@ export default function StationCard({ station, fuelType, userLocation = [14.5995
 
       <View style={styles.rightSection}>
         <View style={styles.priceContainer}>
-          <Text style={[styles.priceValue, { color: priceColor }]}>{formatCurrency(price)}</Text>
-          <Text style={styles.priceUnit}>PHP / L</Text>
+          {price !== null ? (
+            <>
+              <Text style={[styles.priceValue, { color: priceColor }]}>{formatCurrency(price)}</Text>
+              <Text style={styles.priceUnit}>PHP / L</Text>
+            </>
+          ) : (
+            <Text style={[styles.priceValue, { color: colors.textMuted }]}>N/A</Text>
+          )}
         </View>
         <TouchableOpacity style={styles.bookmarkButton} onPress={() => toggleBookmark(station.id)}>
           <Bookmark size={20} color={isBookmarked ? colors.accent : colors.textMuted} fill={isBookmarked ? colors.accent : "transparent"} />
         </TouchableOpacity>
       </View>
-    </View>
+    </CardComponent>
   );
 }
 

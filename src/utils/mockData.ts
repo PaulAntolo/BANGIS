@@ -7,7 +7,7 @@ export const STATIONS = [
     distance: 3.5,
     prices: {
       diesel: 82.90,
-      unleaded: 89.22,
+      gas: 89.22,
       premium: 92.88,
     },
     updatedAt: '19m ago',
@@ -25,7 +25,7 @@ export const STATIONS = [
     distance: 5.6,
     prices: {
       diesel: 80.82,
-      unleaded: 86.13,
+      gas: 86.13,
       premium: 92.59,
     },
     updatedAt: '26m ago',
@@ -43,7 +43,7 @@ export const STATIONS = [
     distance: 7.7,
     prices: {
       diesel: 81.67,
-      unleaded: 88.86,
+      gas: 88.86,
       premium: 92.93,
     },
     updatedAt: '52m ago',
@@ -61,7 +61,7 @@ export const STATIONS = [
     distance: 6.7,
     prices: {
       diesel: 80.66,
-      unleaded: 89.16,
+      gas: 89.16,
       premium: 92.03,
     },
     updatedAt: '3m ago',
@@ -79,7 +79,7 @@ export const STATIONS = [
     distance: 2.6,
     prices: {
       diesel: 81.28,
-      unleaded: 89.41,
+      gas: 89.41,
       premium: 90.14,
     },
     updatedAt: '46m ago',
@@ -97,7 +97,7 @@ export const STATIONS = [
     distance: 0.8,
     prices: {
       diesel: 80.98,
-      unleaded: 88.33,
+      gas: 88.33,
       premium: 92.34,
     },
     updatedAt: '10m ago',
@@ -115,7 +115,7 @@ export const STATIONS = [
     distance: 2.3,
     prices: {
       diesel: 81.18,
-      unleaded: 87.88,
+      gas: 87.88,
       premium: 92.02,
     },
     updatedAt: '18m ago',
@@ -133,7 +133,7 @@ export const STATIONS = [
     distance: 3.8,
     prices: {
       diesel: 83.03,
-      unleaded: 88.76,
+      gas: 88.76,
       premium: 93.34,
     },
     updatedAt: '53m ago',
@@ -151,7 +151,7 @@ export const STATIONS = [
     distance: 3,
     prices: {
       diesel: 84.30,
-      unleaded: 89.89,
+      gas: 89.89,
       premium: 92.11,
     },
     updatedAt: '8m ago',
@@ -169,7 +169,7 @@ export const STATIONS = [
     distance: 6.2,
     prices: {
       diesel: 84.93,
-      unleaded: 85.97,
+      gas: 85.97,
       premium: 90.06,
     },
     updatedAt: '51m ago',
@@ -187,7 +187,7 @@ export const STATIONS = [
     distance: 4.9,
     prices: {
       diesel: 83.67,
-      unleaded: 87.89,
+      gas: 87.89,
       premium: 92.02,
     },
     updatedAt: '10m ago',
@@ -205,7 +205,7 @@ export const STATIONS = [
     distance: 0.6,
     prices: {
       diesel: 80.70,
-      unleaded: 87.79,
+      gas: 87.79,
       premium: 90.45,
     },
     updatedAt: '14m ago',
@@ -223,7 +223,7 @@ export const STATIONS = [
     distance: 7.7,
     prices: {
       diesel: 82.58,
-      unleaded: 87.72,
+      gas: 87.72,
       premium: 90.81,
     },
     updatedAt: '23m ago',
@@ -241,7 +241,7 @@ export const STATIONS = [
     distance: 8.4,
     prices: {
       diesel: 83.28,
-      unleaded: 88.31,
+      gas: 88.31,
       premium: 90.77,
     },
     updatedAt: '27m ago',
@@ -259,7 +259,7 @@ export const STATIONS = [
     distance: 7.3,
     prices: {
       diesel: 84.40,
-      unleaded: 86.10,
+      gas: 86.10,
       premium: 92.82,
     },
     updatedAt: '46m ago',
@@ -277,7 +277,7 @@ export const STATIONS = [
     distance: 0.8,
     prices: {
       diesel: 83.34,
-      unleaded: 86.90,
+      gas: 86.90,
       premium: 94.06,
     },
     updatedAt: '15m ago',
@@ -295,7 +295,7 @@ export const STATIONS = [
     distance: 1.1,
     prices: {
       diesel: 82.68,
-      unleaded: 87.21,
+      gas: 87.21,
       premium: 91.54,
     },
     updatedAt: '16m ago',
@@ -313,7 +313,7 @@ export const STATIONS = [
     distance: 0.9,
     prices: {
       diesel: 83.87,
-      unleaded: 89.46,
+      gas: 89.46,
       premium: 92.65,
     },
     updatedAt: '19m ago',
@@ -331,7 +331,7 @@ export const STATIONS = [
     distance: 0.5,
     prices: {
       diesel: 84.35,
-      unleaded: 85.40,
+      gas: 85.40,
       premium: 93.42,
     },
     updatedAt: '27m ago',
@@ -349,7 +349,7 @@ export const STATIONS = [
     distance: 8.2,
     prices: {
       diesel: 82.32,
-      unleaded: 88.75,
+      gas: 88.75,
       premium: 91.15,
     },
     updatedAt: '15m ago',
@@ -367,7 +367,7 @@ export const STATIONS = [
     distance: 1.1,
     prices: {
       diesel: 81.00,
-      unleaded: 86.62,
+      gas: 86.62,
       premium: 93.16,
     },
     updatedAt: '56m ago',
@@ -385,7 +385,7 @@ export const STATIONS = [
     distance: 1,
     prices: {
       diesel: 82.52,
-      unleaded: 85.94,
+      gas: 85.94,
       premium: 91.46,
     },
     updatedAt: '52m ago',
@@ -403,7 +403,7 @@ export const STATIONS = [
     distance: 5.2,
     prices: {
       diesel: 82.78,
-      unleaded: 86.74,
+      gas: 86.74,
       premium: 90.73,
     },
     updatedAt: '52m ago',
@@ -421,7 +421,7 @@ export const STATIONS = [
     distance: 4.1,
     prices: {
       diesel: 83.32,
-      unleaded: 86.33,
+      gas: 86.33,
       premium: 91.81,
     },
     updatedAt: '10m ago',
@@ -439,7 +439,7 @@ export const STATIONS = [
     distance: 5.6,
     prices: {
       diesel: 82.78,
-      unleaded: 87.33,
+      gas: 87.33,
       premium: 94.71,
     },
     updatedAt: '11m ago',
@@ -457,7 +457,7 @@ export const STATIONS = [
     distance: 4.7,
     prices: {
       diesel: 83.40,
-      unleaded: 87.27,
+      gas: 87.27,
       premium: 93.14,
     },
     updatedAt: '29m ago',
@@ -475,7 +475,7 @@ export const STATIONS = [
     distance: 2.8,
     prices: {
       diesel: 83.42,
-      unleaded: 86.37,
+      gas: 86.37,
       premium: 94.52,
     },
     updatedAt: '44m ago',
@@ -493,7 +493,7 @@ export const STATIONS = [
     distance: 6.7,
     prices: {
       diesel: 84.57,
-      unleaded: 87.74,
+      gas: 87.74,
       premium: 90.16,
     },
     updatedAt: '31m ago',
@@ -511,7 +511,7 @@ export const STATIONS = [
     distance: 4.4,
     prices: {
       diesel: 84.15,
-      unleaded: 86.65,
+      gas: 86.65,
       premium: 92.71,
     },
     updatedAt: '38m ago',
@@ -529,7 +529,7 @@ export const STATIONS = [
     distance: 3.2,
     prices: {
       diesel: 84.14,
-      unleaded: 89.25,
+      gas: 89.25,
       premium: 94.64,
     },
     updatedAt: '45m ago',
@@ -547,7 +547,7 @@ export const STATIONS = [
     distance: 4,
     prices: {
       diesel: 82.05,
-      unleaded: 87.21,
+      gas: 87.21,
       premium: 91.52,
     },
     updatedAt: '40m ago',
@@ -565,7 +565,7 @@ export const STATIONS = [
     distance: 7.4,
     prices: {
       diesel: 82.29,
-      unleaded: 85.95,
+      gas: 85.95,
       premium: 93.03,
     },
     updatedAt: '10m ago',
@@ -583,7 +583,7 @@ export const STATIONS = [
     distance: 3.5,
     prices: {
       diesel: 80.98,
-      unleaded: 88.94,
+      gas: 88.94,
       premium: 92.12,
     },
     updatedAt: '20m ago',
@@ -601,7 +601,7 @@ export const STATIONS = [
     distance: 6.8,
     prices: {
       diesel: 81.05,
-      unleaded: 87.55,
+      gas: 87.55,
       premium: 92.93,
     },
     updatedAt: '16m ago',
@@ -619,7 +619,7 @@ export const STATIONS = [
     distance: 4.1,
     prices: {
       diesel: 82.95,
-      unleaded: 88.51,
+      gas: 88.51,
       premium: 90.07,
     },
     updatedAt: '53m ago',
@@ -637,7 +637,7 @@ export const STATIONS = [
     distance: 3.5,
     prices: {
       diesel: 80.86,
-      unleaded: 85.39,
+      gas: 85.39,
       premium: 91.49,
     },
     updatedAt: '10m ago',
@@ -655,7 +655,7 @@ export const STATIONS = [
     distance: 5.3,
     prices: {
       diesel: 81.88,
-      unleaded: 86.25,
+      gas: 86.25,
       premium: 91.28,
     },
     updatedAt: '44m ago',
@@ -673,7 +673,7 @@ export const STATIONS = [
     distance: 1.6,
     prices: {
       diesel: 80.39,
-      unleaded: 85.74,
+      gas: 85.74,
       premium: 92.62,
     },
     updatedAt: '26m ago',
@@ -691,7 +691,7 @@ export const STATIONS = [
     distance: 4.5,
     prices: {
       diesel: 83.49,
-      unleaded: 88.64,
+      gas: 88.64,
       premium: 93.64,
     },
     updatedAt: '22m ago',
@@ -709,7 +709,7 @@ export const STATIONS = [
     distance: 2.9,
     prices: {
       diesel: 81.92,
-      unleaded: 88.62,
+      gas: 88.62,
       premium: 92.28,
     },
     updatedAt: '26m ago',
@@ -727,7 +727,7 @@ export const STATIONS = [
     distance: 7.6,
     prices: {
       diesel: 82.27,
-      unleaded: 89.91,
+      gas: 89.91,
       premium: 93.77,
     },
     updatedAt: '7m ago',
@@ -745,7 +745,7 @@ export const STATIONS = [
     distance: 0.7,
     prices: {
       diesel: 82.84,
-      unleaded: 89.69,
+      gas: 89.69,
       premium: 90.93,
     },
     updatedAt: '38m ago',
@@ -763,7 +763,7 @@ export const STATIONS = [
     distance: 7.1,
     prices: {
       diesel: 81.53,
-      unleaded: 88.31,
+      gas: 88.31,
       premium: 93.30,
     },
     updatedAt: '45m ago',
@@ -781,7 +781,7 @@ export const STATIONS = [
     distance: 8.4,
     prices: {
       diesel: 80.59,
-      unleaded: 85.11,
+      gas: 85.11,
       premium: 93.03,
     },
     updatedAt: '37m ago',
@@ -799,7 +799,7 @@ export const STATIONS = [
     distance: 8,
     prices: {
       diesel: 83.80,
-      unleaded: 86.48,
+      gas: 86.48,
       premium: 92.30,
     },
     updatedAt: '47m ago',
@@ -817,7 +817,7 @@ export const STATIONS = [
     distance: 5,
     prices: {
       diesel: 81.03,
-      unleaded: 88.02,
+      gas: 88.02,
       premium: 90.64,
     },
     updatedAt: '19m ago',
@@ -835,7 +835,7 @@ export const STATIONS = [
     distance: 1.2,
     prices: {
       diesel: 82.30,
-      unleaded: 88.74,
+      gas: 88.74,
       premium: 93.65,
     },
     updatedAt: '40m ago',
@@ -853,7 +853,7 @@ export const STATIONS = [
     distance: 3.9,
     prices: {
       diesel: 80.55,
-      unleaded: 88.96,
+      gas: 88.96,
       premium: 90.61,
     },
     updatedAt: '42m ago',
@@ -871,7 +871,7 @@ export const STATIONS = [
     distance: 8.1,
     prices: {
       diesel: 82.36,
-      unleaded: 87.75,
+      gas: 87.75,
       premium: 92.40,
     },
     updatedAt: '11m ago',
@@ -889,7 +889,7 @@ export const STATIONS = [
     distance: 2.5,
     prices: {
       diesel: 82.23,
-      unleaded: 86.56,
+      gas: 86.56,
       premium: 93.26,
     },
     updatedAt: '33m ago',
@@ -902,13 +902,13 @@ export const STATIONS = [
 ];
 
 export const TREND_DATA = [
-  { name: 'MON', unleaded: 85.20, diesel: 80.50, premium: 90.90 },
-  { name: 'TUE', unleaded: 85.50, diesel: 80.80, premium: 91.20 },
-  { name: 'WED', unleaded: 86.80, diesel: 81.00, premium: 91.40 },
-  { name: 'THU', unleaded: 86.10, diesel: 81.20, premium: 91.60 },
-  { name: 'FRI', unleaded: 87.20, diesel: 81.30, premium: 91.70 },
-  { name: 'SAT', unleaded: 87.80, diesel: 81.40, premium: 91.80 },
-  { name: 'SUN', unleaded: 88.10, diesel: 81.50, premium: 91.90 },
+  { name: 'MON', gas: 85.20, diesel: 80.50, premium: 90.90 },
+  { name: 'TUE', gas: 85.50, diesel: 80.80, premium: 91.20 },
+  { name: 'WED', gas: 86.80, diesel: 81.00, premium: 91.40 },
+  { name: 'THU', gas: 86.10, diesel: 81.20, premium: 91.60 },
+  { name: 'FRI', gas: 87.20, diesel: 81.30, premium: 91.70 },
+  { name: 'SAT', gas: 87.80, diesel: 81.40, premium: 91.80 },
+  { name: 'SUN', gas: 88.10, diesel: 81.50, premium: 91.90 },
 ];
 
 export const ACTIVITY = [
@@ -932,7 +932,7 @@ export const ACTIVITY = [
 
 export const TREND_DATA_30D = Array.from({ length: 30 }, (_, i) => ({
   name: `Day ${i + 1}`,
-  unleaded: 85.20 + Math.sin(i / 5) * 2 + (i / 10),
+  gas: 85.20 + Math.sin(i / 5) * 2 + (i / 10),
   diesel: 80.50 + Math.sin(i / 5) * 1.5 + (i / 12),
   premium: 90.90 + Math.sin(i / 5) * 2.2 + (i / 8),
 }));
@@ -982,9 +982,9 @@ export const EXTENDED_ACTIVITY = [
 ];
 
 export const REGIONAL_PRICES = [
-  { area: 'LACSON STREET', unleaded: 88.80, diesel: 84.50, premium: 93.90 },
-  { area: 'ARANETA STREET', unleaded: 89.40, diesel: 85.10, premium: 94.50 },
-  { area: 'MANSILINGAN', unleaded: 86.90, diesel: 82.80, premium: 91.50 },
-  { area: 'BURGOS STREET', unleaded: 89.20, diesel: 84.90, premium: 94.10 },
-  { area: 'MANDALAGAN', unleaded: 88.10, diesel: 83.90, premium: 93.20 },
+  { area: 'LACSON STREET', gas: 88.80, diesel: 84.50, premium: 93.90 },
+  { area: 'ARANETA STREET', gas: 89.40, diesel: 85.10, premium: 94.50 },
+  { area: 'MANSILINGAN', gas: 86.90, diesel: 82.80, premium: 91.50 },
+  { area: 'BURGOS STREET', gas: 89.20, diesel: 84.90, premium: 94.10 },
+  { area: 'MANDALAGAN', gas: 88.10, diesel: 83.90, premium: 93.20 },
 ];

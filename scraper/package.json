@@ -1,15 +1,25 @@
 {
   "name": "bangis-scraper",
-  "version": "1.0.0",
-  "description": "Playwright scraper for GasWatch PH → Bangis Firestore",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "Playwright scraper for MetroFuelTracker (Bacolod) → Bangis Firestore",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node index.js",
-    "dry-run": "node index.js --dry-run"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "scrape": "tsc && node dist/index.js --once",
+    "dry-run": "tsc && node dist/index.js --dry-run",
+    "dev": "npx ts-node src/index.ts --once"
   },
   "dependencies": {
-    "playwright": "^1.42.0",
-    "firebase-admin": "^12.0.0",
-    "dotenv": "^16.4.5"
+    "playwright": "^1.52.0",
+    "firebase-admin": "^13.0.0",
+    "node-cron": "^3.0.3",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2",
+    "@types/node": "^22.0.0",
+    "@types/node-cron": "^3.0.11",
+    "ts-node": "^10.9.2"
   }
 }

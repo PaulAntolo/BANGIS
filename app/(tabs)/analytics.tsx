@@ -10,16 +10,16 @@ import { getPriceColor } from '../../src/utils/formatters';
 const screenWidth = Dimensions.get("window").width;
 
 export default function AnalyticsScreen() {
-  const [activeFuel, setActiveFuel] = useState<'unleaded' | 'diesel' | 'premium'>('unleaded');
-  const [timeframe, setTimeframe] = useState('7D');
+  const [activeFuel, setActiveFuel] = useState<'gas' | 'diesel' | 'premium'>('gas');
+  const [timeframe, setTimeframe] = useState('1W');
   const { stations } = useFuelData();
   
   const { colors } = useAppTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const currentAverages = useMemo(() => {
-    const avgs = { unleaded: 0, diesel: 0, premium: 0 };
-    (['unleaded', 'diesel', 'premium'] as const).forEach(fuel => {
+    const avgs = { gas: 0, diesel: 0, premium: 0 };
+    (['gas', 'diesel', 'premium'] as const).forEach(fuel => {
       const valid = stations.filter(s => s.prices?.[fuel] > 0);
       const sum = valid.reduce((acc, station) => acc + (station.prices[fuel] || 0), 0);
       avgs[fuel] = valid.length > 0 ? (sum / valid.length) : 0;
@@ -28,22 +28,29 @@ export default function AnalyticsScreen() {
   }, [stations]);
 
   const chartData = useMemo(() => {
-    const days = timeframe === '1M' ? 30 : 7;
+    const days = 7;
     return Array.from({length: days}, (_, i) => {
       const isLast = i === days - 1;
       const daysAgo = days - 1 - i;
-      const baseDrop = timeframe === '1M' ? 0.0015 : 0.005;
+      const baseDrop = 0.005;
       
       const getPrice = (currentAvg: number) => {
+        // Since the database has 0 historical data right now, we anchor the current 
+        // day to the exact scraped average, and simulate a slight curve for the past 
+        // 6 days so the chart doesn't look broken while we wait for real data to accumulate.
         if (isLast) return currentAvg;
-        const trend = currentAvg * (1 - daysAgo * baseDrop);
-        const bump = Math.sin(i * 1.2) * 0.5;
+        const trend = currentAvg * (1 + daysAgo * baseDrop);
+        const bump = Math.sin(i * 1.5) * (currentAvg * 0.008);
         return trend + bump;
       };
 
+      const date = new Date();
+      date.setDate(date.getDate() - daysAgo);
+      const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
+
       return {
-        name: timeframe === '1M' ? `Day ${i + 1}` : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i % 7],
-        unleaded: getPrice(currentAverages.unleaded),
+        name: dayName,
+        gas: getPrice(currentAverages.gas),
         diesel: getPrice(currentAverages.diesel),
         premium: getPrice(currentAverages.premium),
       };
@@ -65,29 +72,28 @@ export default function AnalyticsScreen() {
     };
   }, [activeFuel, chartData, currentAverages]);
 
-  const districtPrices = useMemo(() => {
-    const areas: Record<string, { count: number; unleaded: number; diesel: number; premium: number }> = {};
+  const brandPrices = useMemo(() => {
+    const brands: Record<string, { count: number; gas: number; diesel: number; premium: number }> = {};
 
     stations.forEach(station => {
-      if (!station.address || !station.prices) return;
-      const parts = station.address.split(',');
-      if (parts.length > 0) {
-        const area = parts[0].trim().toUpperCase();
-        if (!areas[area]) {
-          areas[area] = { count: 0, unleaded: 0, diesel: 0, premium: 0 };
-        }
-        areas[area].count += 1;
-        areas[area].unleaded += station.prices.unleaded || 0;
-        areas[area].diesel += station.prices.diesel || 0;
-        areas[area].premium += station.prices.premium || 0;
+      if (!station.brand || !station.prices) return;
+      
+      const brand = station.brand.trim().toUpperCase();
+
+      if (!brands[brand]) {
+        brands[brand] = { count: 0, gas: 0, diesel: 0, premium: 0 };
       }
+      brands[brand].count += 1;
+      brands[brand].gas += station.prices.gas || 0;
+      brands[brand].diesel += station.prices.diesel || 0;
+      brands[brand].premium += station.prices.premium || 0;
     });
 
-    const result = Object.keys(areas).map(area => {
-      const data = areas[area];
+    const result = Object.keys(brands).map(brand => {
+      const data = brands[brand];
       return {
-        area,
-        unleaded: data.count > 0 ? data.unleaded / data.count : 0,
+        brand,
+        gas: data.count > 0 ? data.gas / data.count : 0,
         diesel: data.count > 0 ? data.diesel / data.count : 0,
         premium: data.count > 0 ? data.premium / data.count : 0,
       };
@@ -116,9 +122,7 @@ export default function AnalyticsScreen() {
   };
 
   const lineChartData = {
-    labels: timeframe === '7D' 
-      ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].slice(0, chartData.length)
-      : Array.from({length: chartData.length}, (_, i) => i % 5 === 0 ? `${i+1}` : ''),
+    labels: chartData.map(d => d.name),
     datasets: [
       {
         data: chartData.map(d => d[activeFuel]),
@@ -148,7 +152,7 @@ export default function AnalyticsScreen() {
               <Text style={styles.regionLabel}>CURRENT REGION</Text>
               <View style={styles.regionTitleContainer}>
                 <MapPin size={20} color={colors.accent} />
-                <Text style={styles.regionTitle}>Nearby Area</Text>
+                <Text style={styles.regionTitle}>Bacolod City</Text>
               </View>
             </View>
             <View style={styles.regionBadge}>
@@ -172,7 +176,7 @@ export default function AnalyticsScreen() {
         </View>
 
         <View style={styles.fuelSelector}>
-          {(['unleaded', 'diesel', 'premium'] as const).map((type) => (
+          {(['gas', 'diesel', 'premium'] as const).map((type) => (
             <TouchableOpacity
               key={type}
               onPress={() => setActiveFuel(type)}
@@ -192,7 +196,7 @@ export default function AnalyticsScreen() {
               <Text style={styles.sectionSubtitle}>Bacolod City Market Trend ({timeframe})</Text>
             </View>
             <View style={styles.timeframeToggles}>
-              {['7D', '1M'].map(t => (
+              {['1W'].map(t => (
                 <TouchableOpacity
                   key={t}
                   onPress={() => setTimeframe(t)}
@@ -207,17 +211,23 @@ export default function AnalyticsScreen() {
           <View style={styles.chartContainer}>
             <LineChart
               data={lineChartData}
-              width={screenWidth - 48}
+              width={screenWidth - 80}
               height={180}
-              chartConfig={chartConfig}
-              bezier
-              style={{
-                borderRadius: 16,
+              chartConfig={{
+                ...chartConfig,
+                paddingRight: 40,
               }}
+              yLabelsOffset={24}
+              bezier
+              withDots={true}
+              withInnerLines={false}
+              withOuterLines={false}
               withVerticalLines={false}
-              withHorizontalLines={true}
+              withHorizontalLines={false}
+              withShadow={true}
+              formatYLabel={(v) => `${Number(v).toFixed(0)}`}
               yAxisLabel="₱"
-              yAxisInterval={1}
+              style={{ paddingRight: 16, marginLeft: -10 }}
             />
           </View>
         </View>
@@ -225,8 +235,8 @@ export default function AnalyticsScreen() {
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionTitle}>District Pricing</Text>
-              <Text style={styles.sectionSubtitle}>Price variation by city area</Text>
+              <Text style={styles.sectionTitleMain}>Brand Pricing</Text>
+              <Text style={[styles.sectionSubtitle, { marginBottom: 24, marginTop: -20 }]}>Bacolod Brand Variances</Text>
             </View>
             <View style={styles.infoIconBox}>
               <Info size={14} color={colors.primary} />
@@ -234,19 +244,23 @@ export default function AnalyticsScreen() {
           </View>
           
           <View style={styles.districtList}>
-            {districtPrices.map((item) => {
+            {brandPrices.map((item) => {
               const currentPrice = item[activeFuel];
               let statusColor = getPriceColor(currentPrice, activeFuel, stations, colors);
 
               return (
-                <View key={item.area} style={styles.districtItem}>
+                <View key={item.brand} style={styles.districtItem}>
                   <View style={styles.districtHeader}>
-                    <View>
-                      <Text style={styles.districtArea}>{item.area}</Text>
-                      <View style={styles.districtPriceRow}>
-                        <Text style={[styles.districtPrice, { color: statusColor }]}>₱{currentPrice.toFixed(2)}</Text>
+                    <Text style={styles.districtArea}>{item.brand}</Text>
+                    <View style={styles.districtPriceRow}>
+                      <Text style={[styles.districtPrice, { color: statusColor }]}>₱{currentPrice.toFixed(2)}</Text>
+                      <View style={[styles.districtBadge, { backgroundColor: statusColor + '20' }]}>
+                        <Text style={[styles.districtBadgeText, { color: statusColor }]}>{item.count} STAT</Text>
                       </View>
                     </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, marginTop: 4 }}>
+                    <Text style={styles.marketIndexLabel}>0</Text>
                     <Text style={styles.marketIndexLabel}>MARKET INDEX</Text>
                   </View>
                   <View style={styles.barBackground}>
@@ -297,7 +311,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   timeToggleActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   timeToggleText: { fontSize: 9, fontWeight: '900', color: colors.textMuted },
   timeToggleTextActive: { color: 'white' },
-  chartContainer: { height: 180, marginLeft: -16, marginTop: 8 },
+  chartContainer: { height: 180, marginTop: 8 },
   infoIconBox: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primaryLight + '20', alignItems: 'center', justifyContent: 'center' },
   districtList: { gap: 16 },
   districtItem: { gap: 8 },

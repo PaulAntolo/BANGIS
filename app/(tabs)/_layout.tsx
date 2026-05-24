@@ -2,11 +2,13 @@ import { Tabs } from 'expo-router';
 import { Home, Search, BarChart2, User, Settings } from 'lucide-react-native';
 import { useAppTheme } from '../../src/context/ThemeContext';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FuelProvider } from '../../src/context/FuelContext';
 
 export default function TabLayout() {
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <FuelProvider>
@@ -24,8 +26,8 @@ export default function TabLayout() {
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.05,
           shadowRadius: 10,
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + insets.bottom,
+          paddingBottom: Math.max(8, insets.bottom),
           paddingTop: 8,
         },
         tabBarLabelStyle: {

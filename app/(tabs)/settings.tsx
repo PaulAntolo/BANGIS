@@ -33,7 +33,7 @@ export default function SettingsScreen() {
       <Header title="Settings" />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        
+
         <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>PREFERENCES</Text>
           <View style={styles.menuList}>
@@ -44,9 +44,9 @@ export default function SettingsScreen() {
                 </View>
                 <Text style={styles.menuItemTitle}>Dark Mode</Text>
               </View>
-              <Switch 
-                value={isDarkMode} 
-                onValueChange={toggleTheme} 
+              <Switch
+                value={isDarkMode}
+                onValueChange={toggleTheme}
                 trackColor={{ false: colors.borderLight, true: colors.accent + '80' }}
                 thumbColor={isDarkMode ? colors.accent : colors.bgLight}
               />
@@ -58,7 +58,7 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>LEGAL & INFO</Text>
           <View style={styles.menuList}>
             {settingsItems.map((item, index) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={index}
                 style={[styles.menuItem, index !== settingsItems.length - 1 && styles.menuItemBorder]}
               >

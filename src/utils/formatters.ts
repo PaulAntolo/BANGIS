@@ -21,11 +21,11 @@ export function getStatusColorByRange(price: number, minPrice: number, maxPrice:
   return colors.primary; // Normal -> Blue (Primary)
 }
 
-export function getPriceColor(price: number, fuelType: string, allStations: any[], colors: any) {
-  if (!price) return colors.primary;
+export function getPriceColor(price: number | null | undefined, fuelType: string, allStations: any[], colors: any) {
+  if (price === null || price === undefined) return colors.textMuted;
   
-  if (price < 60) return colors.success; // Less than 60 -> Green
-  if (price <= 75) return colors.primary; // 60 to 75 -> Blue
+  if (price < 70) return colors.success; // 69 and below -> Green
+  if (price < 80) return colors.primary; // 70 to 79.99 -> Blue
   
-  return colors.danger; // Above 75 -> Red
+  return colors.danger; // 80 and above -> Red
 }

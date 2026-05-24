@@ -22,6 +22,6 @@ export const getDistanceLabel = (station: any, userLocation: [number, number]) =
 // Helper to get price for selected fuel type
 export const getSelectedPrice = (prices: any, selectedFuelType: string) => {
   if (!prices) return 0;
-  const key = selectedFuelType.toLowerCase() as 'unleaded' | 'diesel' | 'premium';
+  const key = selectedFuelType.toLowerCase() as 'gas' | 'diesel' | 'premium';
   return prices[key] || 0;
 };

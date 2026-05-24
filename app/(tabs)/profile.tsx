@@ -16,7 +16,7 @@ export default function ProfileScreen() {
   const { stations } = useFuelData();
   const { colors } = useAppTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
-  
+
   const [uploading, setUploading] = useState(false);
 
   const bookmarkedStations = useMemo(() => {
@@ -44,7 +44,7 @@ export default function ProfileScreen() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setUploading(true);
         const imageUri = result.assets[0].uri;
-        
+
         // Save locally to AsyncStorage context
         await updateUser({ photoURL: imageUri });
         setUploading(false);
@@ -58,7 +58,6 @@ export default function ProfileScreen() {
 
   const menuItems = [
     { icon: Shield, title: 'Security & Account', color: colors.primary, path: '/security' },
-    { icon: History, title: 'Activity History', color: colors.accent, path: '/(tabs)/analytics' },
   ];
 
   const handleLogout = async () => {
@@ -83,7 +82,7 @@ export default function ProfileScreen() {
                   <ActivityIndicator color={colors.primary} />
                 </View>
               ) : (
-                <Image 
+                <Image
                   source={{ uri: profile?.photoURL || `https://api.dicebear.com/7.x/avataaars/png?seed=${profile?.displayName || 'User'}` }}
                   style={styles.avatar}
                 />
@@ -93,7 +92,7 @@ export default function ProfileScreen() {
               <Camera size={14} color="white" />
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{profile?.displayName || 'User'}</Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
@@ -107,7 +106,7 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>ACCOUNT SETTINGS</Text>
           <View style={styles.menuList}>
             {menuItems.map((item, index) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={index}
                 style={[styles.menuItem, index !== menuItems.length - 1 && styles.menuItemBorder]}
                 onPress={() => item.path && router.push(item.path as any)}
@@ -134,7 +133,7 @@ export default function ProfileScreen() {
                 </View>
                 <View>
                   <Text style={styles.menuItemTitle}>MetroFuel Tracker</Text>
-                  <Text style={{ fontSize: 10, color: colors.textMuted, marginTop: 2 }}>gaswatchph.com</Text>
+                  <Text style={{ fontSize: 10, color: colors.textMuted, marginTop: 2 }}>metrofueltracker.com</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -147,7 +146,7 @@ export default function ProfileScreen() {
             <View style={styles.bookmarksContainer}>
               {bookmarkedStations.map(station => (
                 <View key={station.id} style={{ marginBottom: 12 }}>
-                  <StationCard station={station} fuelType="unleaded" />
+                  <StationCard station={station} fuelType="gas" />
                 </View>
               ))}
             </View>

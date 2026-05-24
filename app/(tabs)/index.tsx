@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Modal, Image, FlatList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Modal, Image, FlatList, Linking } from 'react-native';
 import { Search as SearchIcon, Navigation, Fuel, ArrowLeft, Clock, Coffee, CreditCard, Wind, ShieldCheck, MapPin, Info } from 'lucide-react-native';
 import Header from '../../src/components/Header';
 import OpenStreetMap, { OpenStreetMapHandle } from '../../src/components/OpenStreetMap';
@@ -8,6 +8,7 @@ import { calculateDistance, getDistanceLabel } from '../../src/utils/geo';
 import * as Location from 'expo-location';
 import { useFuelData } from '../../src/context/FuelContext';
 import { useAppTheme } from '../../src/context/ThemeContext';
+import { useLocalSearchParams } from 'expo-router';
 
 const DEFAULT_LOCATION = { latitude: 14.5995, longitude: 120.9842 };
 
@@ -21,15 +22,18 @@ export default function HomeScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [navStation, setNavStation] = useState<any>(null);
   const [routePoints, setRoutePoints] = useState<{ latitude: number; longitude: number }[]>([]);
-  const [selectedFuelType, setSelectedFuelType] = useState<'unleaded' | 'diesel' | 'premium'>('unleaded');
+  const [selectedFuelType, setSelectedFuelType] = useState<'gas' | 'diesel' | 'premium'>('gas');
   const [userLocation, setUserLocation] = useState<any>(null);
   const mapRef = useRef<OpenStreetMapHandle>(null);
   const locationSub = useRef<Location.LocationSubscription | null>(null);
   const lastRouteFetch = useRef<{ latitude: number; longitude: number } | null>(null);
 
-  const { stations } = useFuelData();
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
 
-  const getSelectedPrice = (prices: any, type: string) => prices[type] || 0;
+  const { stations } = useFuelData();
+  const { stationId } = useLocalSearchParams<{ stationId?: string }>();
+
+  const getSelectedPrice = (prices: any, type: string) => prices[type] ?? null;
 
   const baseFilteredStations = useMemo(() => {
     if (stations.length === 0) return [];
@@ -37,20 +41,28 @@ export default function HomeScreen() {
   }, [stations]);
 
   const mapStations = useMemo(() => {
-    return baseFilteredStations.map((s) => ({
-      id: s.id,
-      lat: s.coords.lat,
-      lng: s.coords.lng,
-      name: s.name,
-      brand: s.brand,
-      priceLabel: formatCurrency(getSelectedPrice(s.prices, selectedFuelType)),
-      priceColor: getPriceColor(getSelectedPrice(s.prices, selectedFuelType), selectedFuelType, stations, colors),
-      logoUri: s.logoUri,
-    }));
+    return baseFilteredStations.map((s) => {
+      const p = getSelectedPrice(s.prices, selectedFuelType);
+      return {
+        id: s.id,
+        lat: s.coords.lat,
+        lng: s.coords.lng,
+        name: s.name,
+        brand: s.brand,
+        priceLabel: p !== null ? formatCurrency(p) : 'N/A',
+        priceColor: p !== null ? getPriceColor(p, selectedFuelType, stations, colors) : colors.textMuted,
+        logoUri: s.logoUri,
+      };
+    });
   }, [baseFilteredStations, selectedFuelType, isNavigating, stations, colors]);
 
   const filteredStations = useMemo(() => {
-    const withDetails = baseFilteredStations.map((s) => ({
+    const validStations = baseFilteredStations.filter((s) => {
+      const p = getSelectedPrice(s.prices, selectedFuelType);
+      return p !== null && p > 0;
+    });
+
+    const withDetails = validStations.map((s) => ({
       ...s,
       distanceValue: calculateDistance(
         userLocation?.latitude || DEFAULT_LOCATION.latitude,
@@ -62,7 +74,7 @@ export default function HomeScreen() {
 
     const sorted = withDetails.sort(
       (a, b) =>
-        getSelectedPrice(a.prices, selectedFuelType) - getSelectedPrice(b.prices, selectedFuelType)
+        (getSelectedPrice(a.prices, selectedFuelType) as number) - (getSelectedPrice(b.prices, selectedFuelType) as number)
     );
     if (sorted.length > 0) {
       sorted[0].isBestValue = true;
@@ -74,7 +86,7 @@ export default function HomeScreen() {
   const topRecommendations = useMemo(() => {
     const topStations = filteredStations;
     if (topStations.length === 0) return [];
-    
+
     return topStations.map((station, index) => {
       let recommendationReason = '';
       if (index === 0) {
@@ -95,17 +107,37 @@ export default function HomeScreen() {
     });
   }, [filteredStations]);
 
-  const handleLocateMe = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return;
+  useEffect(() => {
+    if (stationId && filteredStations.length > 0) {
+      const station = filteredStations.find((s) => s.id === stationId);
+      if (station && selectedStation?.id !== stationId) {
+        setSelectedStation(station);
+        setTimeout(() => {
+          mapRef.current?.flyTo(station.coords.lat, station.coords.lng, 15);
+        }, 500);
+      }
+    }
+  }, [stationId, filteredStations]);
 
-    const location = await Location.getCurrentPositionAsync({});
-    const newLoc = {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    };
-    setUserLocation(newLoc);
-    mapRef.current?.flyTo(newLoc.latitude, newLoc.longitude, 14);
+  const handleLocateMe = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationPermissionDenied(true);
+        return;
+      }
+      
+      setLocationPermissionDenied(false);
+      const location = await Location.getCurrentPositionAsync({});
+      const newLoc = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+      setUserLocation(newLoc);
+      mapRef.current?.flyTo(newLoc.latitude, newLoc.longitude, 14);
+    } catch (err) {
+      console.warn('Failed to get current position:', err);
+    }
   };
 
   useEffect(() => {
@@ -137,7 +169,7 @@ export default function HomeScreen() {
     setIsNavigating(true);
     setSelectedStation(null);
     const dest = { latitude: station.coords.lat, longitude: station.coords.lng };
-    
+
     await fetchRoute(userLocation, dest);
     lastRouteFetch.current = userLocation;
     mapRef.current?.fitCoordinates([userLocation, dest]);
@@ -145,26 +177,30 @@ export default function HomeScreen() {
     if (locationSub.current) {
       locationSub.current.remove();
     }
-    
-    locationSub.current = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.High,
-        timeInterval: 3000,
-        distanceInterval: 10,
-      },
-      (loc) => {
-        const newLoc = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-        setUserLocation(newLoc);
-        
-        if (lastRouteFetch.current) {
-          const dist = calculateDistance(newLoc.latitude, newLoc.longitude, lastRouteFetch.current.latitude, lastRouteFetch.current.longitude);
-          if (dist > 0.05) { // 50 meters
-            fetchRoute(newLoc, dest);
-            lastRouteFetch.current = newLoc;
+
+    try {
+      locationSub.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 3000,
+          distanceInterval: 10,
+        },
+        (loc) => {
+          const newLoc = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          setUserLocation(newLoc);
+
+          if (lastRouteFetch.current) {
+            const dist = calculateDistance(newLoc.latitude, newLoc.longitude, lastRouteFetch.current.latitude, lastRouteFetch.current.longitude);
+            if (dist > 0.05) { // 50 meters
+              fetchRoute(newLoc, dest);
+              lastRouteFetch.current = newLoc;
+            }
           }
         }
-      }
-    );
+      );
+    } catch (err) {
+      console.warn('Failed to watch position:', err);
+    }
   };
 
   const exitNavigation = () => {
@@ -182,7 +218,21 @@ export default function HomeScreen() {
       <Header />
 
       <View style={styles.mapContainer}>
-        {userLocation ? (
+        {locationPermissionDenied ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+            <MapPin size={48} color={colors.danger} style={{ marginBottom: 16 }} />
+            <Text style={{ color: colors.primary, fontWeight: '900', fontSize: 18, marginBottom: 8 }}>Location Required</Text>
+            <Text style={{ color: colors.textMuted, textAlign: 'center', marginBottom: 24, lineHeight: 20 }}>
+              BANGIS needs your location to find the cheapest fuel stations near you and provide precise navigation.
+            </Text>
+            <TouchableOpacity 
+              style={{ backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
+              onPress={() => Linking.openSettings()}
+            >
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Open Settings</Text>
+            </TouchableOpacity>
+          </View>
+        ) : userLocation ? (
           <OpenStreetMap
             ref={mapRef}
             style={styles.map}
@@ -210,7 +260,7 @@ export default function HomeScreen() {
             style={styles.filterScroll}
             contentContainerStyle={styles.filterContent}
           >
-            {(['unleaded', 'diesel', 'premium'] as const).map((type) => (
+            {(['gas', 'diesel', 'premium'] as const).map((type) => (
               <TouchableOpacity
                 key={type}
                 style={[styles.filterButton, selectedFuelType === type && styles.filterButtonActive]}
@@ -230,14 +280,14 @@ export default function HomeScreen() {
         <View style={styles.recommendationsContainer}>
           <View style={styles.recommendationsHeader}>
             <Text style={styles.recommendationsTitle}>Top Recommendations</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.toggleBtn}
               onPress={() => setShowRecommendations(!showRecommendations)}
             >
               <Text style={styles.toggleBtnText}>{showRecommendations ? 'HIDE' : 'SHOW'}</Text>
             </TouchableOpacity>
           </View>
-          
+
           {showRecommendations && (
             <FlatList
               showsVerticalScrollIndicator={false}
@@ -245,47 +295,47 @@ export default function HomeScreen() {
               keyExtractor={item => item.id}
               contentContainerStyle={styles.recommendationsList}
               renderItem={({ item, index }) => (
-              <View style={styles.recCard}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.cardHeaderLeft}>
-                    {item.logo ? (
-                      <Image source={item.logo} style={styles.cardLogo} resizeMode="contain" />
-                    ) : null}
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.badgeText}>
-                        {index === 0 ? 'BEST VALUE' : `#${index + 1} CHEAPEST`}
+                <View style={styles.recCard}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardHeaderLeft}>
+                      {item.logo ? (
+                        <Image source={item.logo} style={styles.cardLogo} resizeMode="contain" />
+                      ) : null}
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.badgeText}>
+                          {index === 0 ? 'BEST VALUE' : `#${index + 1} CHEAPEST`}
+                        </Text>
+                        <Text style={styles.stationName} numberOfLines={1}>{item.name}</Text>
+                        <Text style={styles.stationDistance}>
+                          {getDistanceLabel(item, [userLocation.latitude, userLocation.longitude])} away
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.recReasonBox}>
+                    <Text style={styles.recReasonText}>{item.recommendationReason}</Text>
+                  </View>
+
+                  <View style={styles.recBottomRow}>
+                    <View>
+                      <Text style={[styles.stationPrice, { color: getPriceColor(getSelectedPrice(item.prices, selectedFuelType), selectedFuelType, stations, colors) }]}>
+                        {formatCurrency(getSelectedPrice(item.prices, selectedFuelType))}
                       </Text>
-                      <Text style={styles.stationName} numberOfLines={1}>{item.name}</Text>
-                      <Text style={styles.stationDistance}>
-                        {getDistanceLabel(item, [userLocation.latitude, userLocation.longitude])} away
-                      </Text>
+                      <Text style={styles.priceUnit}>{selectedFuelType} / L</Text>
+                    </View>
+                    <View style={styles.recActions}>
+                      <TouchableOpacity style={styles.btnNavigate} onPress={() => handleNavigate(item)}>
+                        <Text style={styles.btnNavigateText}>GO</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.btnDetails} onPress={() => setSelectedStation(item)}>
+                        <Text style={styles.btnDetailsText}>INFO</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
-                
-                <View style={styles.recReasonBox}>
-                  <Text style={styles.recReasonText}>{item.recommendationReason}</Text>
-                </View>
-                
-                <View style={styles.recBottomRow}>
-                  <View>
-                    <Text style={[styles.stationPrice, { color: getPriceColor(getSelectedPrice(item.prices, selectedFuelType), selectedFuelType, stations, colors) }]}>
-                      {formatCurrency(getSelectedPrice(item.prices, selectedFuelType))}
-                    </Text>
-                    <Text style={styles.priceUnit}>{selectedFuelType} / L</Text>
-                  </View>
-                  <View style={styles.recActions}>
-                    <TouchableOpacity style={styles.btnNavigate} onPress={() => handleNavigate(item)}>
-                      <Text style={styles.btnNavigateText}>GO</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.btnDetails} onPress={() => setSelectedStation(item)}>
-                      <Text style={styles.btnDetailsText}>INFO</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            )}
-          />
+              )}
+            />
           )}
         </View>
       )}
@@ -320,8 +370,8 @@ export default function HomeScreen() {
 
                   <View style={styles.pricesGrid}>
                     <View style={styles.priceBox}>
-                      <Text style={styles.priceLabel}>UNLEADED</Text>
-                      <Text style={styles.priceValue}>{formatCurrency(selectedStation.prices.unleaded)}</Text>
+                      <Text style={styles.priceLabel}>GAS</Text>
+                      <Text style={styles.priceValue}>{formatCurrency(selectedStation.prices.gas)}</Text>
                     </View>
                     <View style={styles.priceBox}>
                       <Text style={styles.priceLabel}>DIESEL</Text>
@@ -340,10 +390,10 @@ export default function HomeScreen() {
                       <Text style={styles.infoText}>Open 24/7</Text>
                     </View>
                     {selectedStation.description ? (
-                       <View style={styles.infoRow}>
-                         <Info size={16} color={colors.textSecondary} />
-                         <Text style={styles.infoText}>{selectedStation.description}</Text>
-                       </View>
+                      <View style={styles.infoRow}>
+                        <Info size={16} color={colors.textSecondary} />
+                        <Text style={styles.infoText}>{selectedStation.description}</Text>
+                      </View>
                     ) : null}
                     <View style={styles.infoRow}>
                       <ShieldCheck size={16} color={colors.textSecondary} />
@@ -358,7 +408,7 @@ export default function HomeScreen() {
                       </Text>
                     </View>
                   </View>
-                  
+
                   <View style={styles.infoSection}>
                     <Text style={styles.infoSectionTitle}>Amenities</Text>
                     <View style={styles.amenitiesRow}>

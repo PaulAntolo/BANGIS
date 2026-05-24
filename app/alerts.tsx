@@ -59,7 +59,6 @@ export default function AlertsScreen() {
                     {alert.sub}
                   </Text>
                 </View>
-                {!alert.isRead && <View style={styles.unreadDot} />}
               </TouchableOpacity>
             ))}
           </View>
@@ -70,17 +69,65 @@ export default function AlertsScreen() {
 }
 
 const getStyles = (colors: any) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgLight },
-  content: { padding: 16 },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 10, fontWeight: '900', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 },
-  list: { gap: 12 },
-  card: { flexDirection: 'row', backgroundColor: colors.bgWhite, padding: 16, borderRadius: 16, gap: 16, borderWidth: 1, borderColor: colors.borderLight },
-  iconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.bgLight, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
-  cardInfo: { flex: 1 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  cardTitle: { fontSize: 14, fontWeight: 'bold', color: colors.primary, flex: 1, marginRight: 8 },
-  cardTime: { fontSize: 9, fontWeight: 'bold', color: colors.textMuted },
-  cardSub: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger, alignSelf: 'center' },
+  container: {
+    flex: 1,
+    backgroundColor: colors.bgLight,
+  },
+  content: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: colors.textSecondary,
+    marginBottom: 12,
+    letterSpacing: 1,
+  },
+  list: {
+    gap: 12,
+  },
+  card: {
+    flexDirection: 'row',
+    backgroundColor: colors.bgWhite,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  iconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: colors.bgLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+  },
+  cardTime: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  cardSub: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
 });

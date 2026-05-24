@@ -79,9 +79,10 @@ function buildMapHtml(isDark: boolean) {
       const logo = station.logoUri
         ? '<img class="marker-logo" src="' + station.logoUri + '" />'
         : '';
-      return '<div class="station-marker"><div class="marker-card">' + logo +
-        '<div class="marker-price">' + station.priceLabel + '</div>' +
-        '<div class="marker-brand">' + station.brand + '</div></div><div class="marker-pin"></div></div>';
+      const color = station.priceColor || '#004B93';
+      return '<div class="station-marker"><div class="marker-card" style="border-color: ' + color + '40">' + logo +
+        '<div class="marker-price" style="color: ' + color + '">' + station.priceLabel + '</div>' +
+        '<div class="marker-brand">' + station.brand + '</div></div><div class="marker-pin" style="border-top-color: ' + color + '"></div></div>';
     }
 
     function setMarkers(stations) {

@@ -14,13 +14,13 @@ export default function SearchScreen() {
   const styles = useMemo(() => getStyles(colors), [colors]);
   
   const { stations } = useFuelData();
-  const [fuelType, setFuelType] = useState<'Diesel' | 'Unleaded' | 'Premium'>('Unleaded');
+  const [fuelType, setFuelType] = useState<'Diesel' | 'Gas' | 'Premium'>('Gas');
   const [sortBy, setSortBy] = useState<'Price' | 'Distance'>('Price');
   const [query, setQuery] = useState('');
   const router = useRouter();
 
   const userLocation: [number, number] = [14.5995, 120.9842];
-  const fuelTypes = ['Diesel', 'Unleaded', 'Premium'] as const;
+  const fuelTypes = ['Diesel', 'Gas', 'Premium'] as const;
   const sortOptions = ['Price', 'Distance'] as const;
 
   const filteredAndSortedStations = useMemo(() => {
@@ -36,7 +36,18 @@ export default function SearchScreen() {
     }));
 
     if (sortBy === 'Price') {
-      return mapped.sort((a, b) => getSelectedPrice(a.prices, fuelType.toLowerCase()) - getSelectedPrice(b.prices, fuelType.toLowerCase()));
+      return mapped.sort((a, b) => {
+        const priceA = getSelectedPrice(a.prices, fuelType.toLowerCase());
+        const priceB = getSelectedPrice(b.prices, fuelType.toLowerCase());
+        const validA = priceA !== null && priceA > 0;
+        const validB = priceB !== null && priceB > 0;
+        
+        if (validA && !validB) return -1; // Valid comes before Invalid
+        if (!validA && validB) return 1;  // Invalid comes after Valid
+        if (!validA && !validB) return 0; // Both Invalid, keep original order
+        
+        return priceA - priceB;
+      });
     } else {
       return mapped.sort((a, b) => a.distanceValue - b.distanceValue);
     }
@@ -98,9 +109,9 @@ export default function SearchScreen() {
 
         <View style={styles.listContainer}>
           {filteredAndSortedStations.map(station => (
-            <TouchableOpacity key={station.id} onPress={() => handleStationClick(station)}>
-              <StationCard station={station} fuelType={fuelType} userLocation={userLocation} />
-            </TouchableOpacity>
+            <View key={station.id} style={{ marginBottom: 12 }}>
+              <StationCard station={station} fuelType={fuelType} userLocation={userLocation} onPress={() => handleStationClick(station)} />
+            </View>
           ))}
           {filteredAndSortedStations.length === 0 && (
             <Text style={styles.emptyText}>No stations found matching your search.</Text>
