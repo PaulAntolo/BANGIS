@@ -44,3 +44,4 @@ scraper/probe.js
 scraper/probe2.js
 .env
 scraper/.env
+scraper/serviceAccountKey.json

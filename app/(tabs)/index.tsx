@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Modal, Image, FlatList, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Modal, Image, FlatList, Linking, Platform } from 'react-native';
 import { Search as SearchIcon, Navigation, Fuel, ArrowLeft, Clock, Coffee, CreditCard, Wind, ShieldCheck, MapPin, Info } from 'lucide-react-native';
 import Header from '../../src/components/Header';
 import OpenStreetMap, { OpenStreetMapHandle } from '../../src/components/OpenStreetMap';
@@ -10,7 +10,7 @@ import { useFuelData } from '../../src/context/FuelContext';
 import { useAppTheme } from '../../src/context/ThemeContext';
 import { useLocalSearchParams } from 'expo-router';
 
-const DEFAULT_LOCATION = { latitude: 14.5995, longitude: 120.9842 };
+const DEFAULT_LOCATION = { latitude: 10.6690464, longitude: 122.9569778 }; // STI West Negros University Front Building, Burgos Ave
 
 export default function HomeScreen() {
   const { colors } = useAppTheme();
@@ -121,6 +121,11 @@ export default function HomeScreen() {
 
   const handleLocateMe = async () => {
     try {
+      if (Platform.OS === 'web') {
+        setUserLocation(DEFAULT_LOCATION);
+        mapRef.current?.flyTo(DEFAULT_LOCATION.latitude, DEFAULT_LOCATION.longitude, 14);
+        return;
+      }
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setLocationPermissionDenied(true);
@@ -179,6 +184,10 @@ export default function HomeScreen() {
     }
 
     try {
+      if (Platform.OS === 'web') {
+        setUserLocation(DEFAULT_LOCATION);
+        return;
+      }
       locationSub.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,

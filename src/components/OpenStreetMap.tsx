@@ -96,7 +96,12 @@ function buildMapHtml(isDark: boolean) {
         });
         const m = L.marker([s.lat, s.lng], { icon: icon });
         m.on('click', function() {
-          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'stationPress', id: s.id }));
+          var msg = JSON.stringify({ type: 'stationPress', id: s.id });
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(msg);
+          } else if (window.parent) {
+            window.parent.postMessage(msg, '*');
+          }
         });
         markersLayer.addLayer(m);
       });
@@ -168,14 +173,21 @@ const OpenStreetMap = React.forwardRef<OpenStreetMapHandle, Props>(function Open
   { style, stations, userLocation, routePoints, isDark = false, onStationPress },
   ref
 ) {
-  const webRef = useRef<WebView>(null);
+  const webRef = useRef<any>(null);
   const html = useMemo(() => buildMapHtml(isDark), [isDark]);
   const ready = useRef(false);
   const prevStationsStr = useRef('');
 
   const post = useCallback((payload: object) => {
     if (!webRef.current) return;
-    webRef.current.postMessage(JSON.stringify(payload));
+    const msg = JSON.stringify(payload);
+    if (Platform.OS === 'web') {
+      if (webRef.current.contentWindow) {
+        webRef.current.contentWindow.postMessage(msg, '*');
+      }
+    } else {
+      webRef.current.postMessage(msg);
+    }
   }, []);
 
   const handleLoadEnd = useCallback(() => {
@@ -219,6 +231,32 @@ const OpenStreetMap = React.forwardRef<OpenStreetMapHandle, Props>(function Open
       }
     } catch (_) {}
   };
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleWebMessage = (event: MessageEvent) => {
+        try {
+          const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          if (data && data.type === 'stationPress' && data.id) {
+            onStationPress?.(data.id);
+          }
+        } catch (_) {}
+      };
+      window.addEventListener('message', handleWebMessage);
+      return () => window.removeEventListener('message', handleWebMessage);
+    }
+  }, [onStationPress]);
+
+  if (Platform.OS === 'web') {
+    return (
+      <iframe
+        ref={webRef}
+        style={{ width: '100%', height: '100%', border: 'none', ...(style as any) }}
+        srcDoc={html}
+        onLoad={handleLoadEnd}
+      />
+    );
+  }
 
   return (
     <WebView
