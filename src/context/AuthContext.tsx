@@ -40,17 +40,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (userDoc.exists()) {
           setProfile(userDoc.data());
         } else {
+          // Set profile strictly in local memory. DO NOT save to Firestore.
+          // This guarantees only explicitly registered users populate the database collection.
           const userProfile = {
             uid: firebaseUser.uid,
             email: firebaseUser.email || null,
             displayName: firebaseUser.displayName || 'Guest',
             photoURL: firebaseUser.photoURL || null,
-            rank: 'Operative',
+            rank: 'Guest',
             contributionCount: 0,
             bookmarks: [],
-            createdAt: serverTimestamp()
+            createdAt: new Date().toISOString()
           };
-          await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
           setProfile(userProfile);
         }
       } else {

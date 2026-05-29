@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Alert, Modal } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Alert, Modal, Platform } from 'react-native';
 import { Settings as SettingsIcon, FileText, Info, ShieldAlert, ChevronRight, Moon, LogOut } from 'lucide-react-native';
 import Header from '../../src/components/Header';
 import { useAppTheme } from '../../src/context/ThemeContext';
@@ -17,7 +17,20 @@ export default function SettingsScreen() {
   const [modalTitle, setModalTitle] = React.useState('');
   const [modalContent, setModalContent] = React.useState<React.ReactNode>(null);
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to log out of your account?');
+      if (confirmed) {
+        try {
+          await logout();
+          router.replace('/(auth)/login');
+        } catch (error) {
+          window.alert('Logout Failed. Please try again.');
+        }
+      }
+      return;
+    }
+
     Alert.alert(
       'Confirm Logout',
       'Are you sure you want to log out of your account?',

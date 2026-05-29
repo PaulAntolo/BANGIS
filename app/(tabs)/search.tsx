@@ -24,11 +24,16 @@ export default function SearchScreen() {
   const sortOptions = ['Price', 'Distance'] as const;
 
   const filteredAndSortedStations = useMemo(() => {
-    let result = stations.filter(station => 
-      station.name.toLowerCase().includes(query.toLowerCase()) ||
-      station.brand.toLowerCase().includes(query.toLowerCase()) ||
-      station.address.toLowerCase().includes(query.toLowerCase())
-    );
+    let result = stations.filter(station => {
+      const matchesSearch = station.name.toLowerCase().includes(query.toLowerCase()) ||
+                            station.brand.toLowerCase().includes(query.toLowerCase()) ||
+                            station.address.toLowerCase().includes(query.toLowerCase());
+      
+      const price = getSelectedPrice(station.prices, fuelType.toLowerCase());
+      const hasValidPrice = price !== null && price > 0;
+
+      return matchesSearch && hasValidPrice;
+    });
 
     const mapped = result.map(s => ({
       ...s,
@@ -39,13 +44,6 @@ export default function SearchScreen() {
       return mapped.sort((a, b) => {
         const priceA = getSelectedPrice(a.prices, fuelType.toLowerCase());
         const priceB = getSelectedPrice(b.prices, fuelType.toLowerCase());
-        const validA = priceA !== null && priceA > 0;
-        const validB = priceB !== null && priceB > 0;
-        
-        if (validA && !validB) return -1; // Valid comes before Invalid
-        if (!validA && validB) return 1;  // Invalid comes after Valid
-        if (!validA && !validB) return 0; // Both Invalid, keep original order
-        
         return priceA - priceB;
       });
     } else {
